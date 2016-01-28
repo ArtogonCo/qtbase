@@ -944,6 +944,8 @@ bool QGLShaderProgram::link()
     }
 #endif
 
+    QTime duration; duration.start();
+
     d->glfuncs->glLinkProgram(program);
     value = 0;
     d->glfuncs->glGetProgramiv(program, GL_LINK_STATUS, &value);
@@ -965,6 +967,9 @@ bool QGLShaderProgram::link()
         }
         delete [] logbuf;
     }
+
+    qDebug() << "QGLShaderProgram::link() - shader compiled" << duration.elapsed() << "ms";
+
     return d->linked;
 }
 

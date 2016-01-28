@@ -43,6 +43,8 @@
 #include <QtGui/qtransform.h>
 #include <QtGui/QColor>
 #include <QtGui/QSurfaceFormat>
+#include <QTime>
+#include <QThread>
 
 #if !defined(QT_OPENGL_ES_2)
 #include <QtGui/qopenglfunctions_4_0_core.h>
@@ -1024,6 +1026,8 @@ bool QOpenGLShaderProgram::link()
             return true;
     }
 
+    QTime duration; duration.start();
+
     d->glfuncs->glLinkProgram(program);
     value = 0;
     d->glfuncs->glGetProgramiv(program, GL_LINK_STATUS, &value);
@@ -1045,6 +1049,9 @@ bool QOpenGLShaderProgram::link()
         }
         delete [] logbuf;
     }
+
+    qDebug() << "QOpenGLShaderProgram::link() - shader compiled" << duration.elapsed() << "ms";
+
     return d->linked;
 }
 
