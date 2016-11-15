@@ -165,7 +165,7 @@ bool QIOSWindow::shouldAutoActivateWindow() const
 
 void QIOSWindow::setOpacity(qreal level)
 {
-    m_view.alpha = qBound(0.0, level, 1.0);
+    m_view.alpha = qBound(qreal(0.0), level, qreal(1.0));
 }
 
 void QIOSWindow::setGeometry(const QRect &rect)

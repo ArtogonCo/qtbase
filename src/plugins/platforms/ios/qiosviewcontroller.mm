@@ -213,6 +213,10 @@
 // -------------------------------------------------------------------------
 
 @implementation QIOSViewController
+@synthesize prefersStatusBarHidden;
+@synthesize preferredStatusBarUpdateAnimation;
+@synthesize preferredStatusBarStyle;
+@synthesize lockedOrientation;
 
 - (id)initWithQIOSScreen:(QIOSScreen *)screen
 {

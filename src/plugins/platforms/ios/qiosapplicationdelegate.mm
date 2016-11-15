@@ -42,6 +42,18 @@
 
 #include <QtCore/QtCore>
 
+typedef BOOL (*IosApplicationOpenUrl)(UIApplication *application,  NSURL * url,  NSString * sourceApplication,  id annotation);
+static IosApplicationOpenUrl s_hook = 0;
+void registerIosAppHook(IosApplicationOpenUrl h) {
+    s_hook = h;
+}
+
+extern "C" void nsWarning(const char* str) {
+#if defined(__APPLE__)
+    NSLog(@"%s", str);
+#endif
+}
+
 @implementation QIOSApplicationDelegate
 
 - (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation
@@ -49,7 +61,7 @@
     Q_UNUSED(application);
     Q_UNUSED(sourceApplication);
     Q_UNUSED(annotation);
-
+    NSLog(@"deepLINK(0):%@ %@",url, sourceApplication);
     if (!QGuiApplication::instance())
         return NO;
 
@@ -57,9 +69,13 @@
     Q_ASSERT(iosIntegration);
 
     QIOSServices *iosServices = static_cast<QIOSServices *>(iosIntegration->services());
-
-    return iosServices->handleUrl(QUrl::fromNSURL(url));
+    
+    BOOL f = NO;
+    if (s_hook) f = (*s_hook)(application,  url,  sourceApplication,  annotation);
+    
+    if (!f)
+        return iosServices->handleUrl(QUrl::fromNSURL(url));
+    return f;
 }
-
 @end
 

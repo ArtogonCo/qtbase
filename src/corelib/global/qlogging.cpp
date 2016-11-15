@@ -32,6 +32,21 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
+#ifdef __APPLE__
+#include "TargetConditionals.h"
+#if TARGET_OS_IPHONE
+#define APPLE_IOS
+#elif TARGET_OS_MAC
+#define APPLE_MACX
+#elif TARGET_IPHONE_SIMULATOR
+#define APPLE_SIM
+#endif
+#endif
+
+
+#if defined(APPLE_IOS)
+extern void iosPrintStdErr(const char*);
+#endif
 
 #include "qlogging.h"
 #include "qlist.h"
@@ -1163,8 +1178,12 @@ void QMessagePattern::setPattern(const QString &pattern)
         } else
 #endif
         {
+#if defined(APPLE_IOS)
+        iosPrintStdErr(error.toLocal8Bit().constData());
+#else
             fprintf(stderr, "%s", error.toLocal8Bit().constData());
             fflush(stderr);
+#endif
         }
     }
     literals = new const char*[literalsVar.size() + 1];
@@ -1486,8 +1505,12 @@ static void qDefaultMessageHandler(QtMsgType type, const QMessageLogContext &con
         return;
 #endif
     }
+#if defined(APPLE_IOS)
+        iosPrintStdErr(logMessage.toLocal8Bit().constData());
+#else
     fprintf(stderr, "%s\n", logMessage.toLocal8Bit().constData());
     fflush(stderr);
+#endif
 }
 
 /*!
@@ -1546,7 +1569,11 @@ static void qt_message_print(QtMsgType msgType, const QMessageLogContext &contex
         }
         ungrabMessageHandler();
     } else {
+#if defined(APPLE_IOS)
+        iosPrintStdErr(message.toLocal8Bit().constData());
+#else
         fprintf(stderr, "%s\n", message.toLocal8Bit().constData());
+#endif
     }
 }
 

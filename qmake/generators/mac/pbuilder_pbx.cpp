@@ -328,6 +328,7 @@ ProjectBuilderMakefileGenerator::writeSubDirs(QTextStream &t)
         << "\t\t\tbuildSettings = {\n";
         for (QMap<QString, QString>::Iterator set_it = settings.begin(); set_it != settings.end(); ++set_it)
             t << "\t\t\t\t" << writeSettings(set_it.key(), set_it.value()) << ";\n";
+        t << "\t\t\t\t" << "CLANG_ENABLE_OBJC_ARC = YES" << ";\n";
         t << "\t\t\t};\n"
           << "\t\t\t" << writeSettings("name", configName) << ";\n"
           << "\t\t};\n";
@@ -1540,6 +1541,9 @@ ProjectBuilderMakefileGenerator::writeMakeParts(QTextStream &t)
 
                 if (!project->isEmpty("QMAKE_XCODE_CODE_SIGN_IDENTITY"))
                     t << "\t\t\t\t" << writeSettings("CODE_SIGN_IDENTITY", project->first("QMAKE_XCODE_CODE_SIGN_IDENTITY")) << ";\n";
+
+                if (!project->isEmpty("QMAKE_XCODE_DEVELOPMENT_TEAM"))
+                    t << "\t\t\t\t" << writeSettings("DEVELOPMENT_TEAM", project->first("QMAKE_XCODE_DEVELOPMENT_TEAM")) << ";\n";
 
                 tmp = project->values("QMAKE_PBX_VARS");
                 for (int i = 0; i < tmp.count(); i++) {

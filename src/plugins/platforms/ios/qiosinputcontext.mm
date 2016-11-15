@@ -457,7 +457,7 @@ void QIOSInputContext::scrollToCursor()
     int statusBarY = qGuiApp->primaryScreen()->availableGeometry().y();
 
     scroll((translatedCursorPos.bottomLeft().y() < keyboardY - margin) ? 0
-        : qMin(rootView.bounds.size.height - keyboardY, translatedCursorPos.y() - statusBarY - margin));
+        : qMin(float(rootView.bounds.size.height - keyboardY), float(translatedCursorPos.y() - statusBarY - margin)));
 }
 
 void QIOSInputContext::scroll(int y)

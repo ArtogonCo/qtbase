@@ -142,17 +142,21 @@ void QIOSContext::doneCurrent()
 
 void QIOSContext::swapBuffers(QPlatformSurface *surface)
 {
-    Q_ASSERT(surface && (surface->surface()->surfaceType() == QSurface::OpenGLSurface
-                         || surface->surface()->surfaceType() == QSurface::RasterGLSurface));
+    if([[UIApplication sharedApplication] applicationState] != /*UIApplicationStateActive*/UIApplicationStateBackground) {
+        Q_ASSERT(surface && (surface->surface()->surfaceType() == QSurface::OpenGLSurface
+                             || surface->surface()->surfaceType() == QSurface::RasterGLSurface));
 
-    if (surface->surface()->surfaceClass() == QSurface::Offscreen)
-        return; // Nothing to do
+        if (surface->surface()->surfaceClass() == QSurface::Offscreen)
+            return; // Nothing to do
 
-    FramebufferObject &framebufferObject = backingFramebufferObjectFor(surface);
+        FramebufferObject &framebufferObject = backingFramebufferObjectFor(surface);
 
-    [EAGLContext setCurrentContext:m_eaglContext];
-    glBindRenderbuffer(GL_RENDERBUFFER, framebufferObject.colorRenderbuffer);
-    [m_eaglContext presentRenderbuffer:GL_RENDERBUFFER];
+        [EAGLContext setCurrentContext:m_eaglContext];
+        glBindRenderbuffer(GL_RENDERBUFFER, framebufferObject.colorRenderbuffer);
+        [m_eaglContext presentRenderbuffer:GL_RENDERBUFFER];
+    } else {
+        NSLog(@"ios background mode");
+    }
 }
 
 QIOSContext::FramebufferObject &QIOSContext::backingFramebufferObjectFor(QPlatformSurface *surface) const

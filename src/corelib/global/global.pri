@@ -29,6 +29,8 @@ SOURCES += \
         global/qlogging.cpp \
         global/qhooks.cpp
 
+OBJECTIVE_SOURCES += global/applehelper.mm
+        
 # qlibraryinfo.cpp includes qconfig.cpp
 INCLUDEPATH += $$QT_BUILD_TREE/src/corelib/global
 
