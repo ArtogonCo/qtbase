@@ -642,7 +642,12 @@ bool QSQLiteDriver::open(const QString & db, const QString &, const QString &, c
 
     sqlite3_enable_shared_cache(sharedCache);
 
+    // Change from Andrey Severov
+#if defined(__APPLE__)
+    if (sqlite3_open_v2(db.toUtf8().constData(), &d->access, openMode, "unix-none") == SQLITE_OK) {
+#else
     if (sqlite3_open_v2(db.toUtf8().constData(), &d->access, openMode, NULL) == SQLITE_OK) {
+#endif
         sqlite3_busy_timeout(d->access, timeOut);
         setOpen(true);
         setOpenError(false);
