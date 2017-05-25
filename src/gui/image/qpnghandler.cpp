@@ -477,9 +477,9 @@ static void read_image_scaled(QImage *outImage, png_structp png_ptr, png_infop i
 }
 
 extern "C" {
-static void qt_png_warning(png_structp /*png_ptr*/, png_const_charp message)
+static void qt_png_warning(png_structp /*png_ptr*/, png_const_charp /*message*/)
 {
-    qWarning("libpng warning: %s", message);
+    //Ivan qWarning("libpng warning: %s", message);
 }
 
 }
