@@ -1174,7 +1174,7 @@
 
 #if QT_HAS_CPP_ATTRIBUTE(nodiscard)         // P0188R1
 #  undef Q_REQUIRED_RESULT
-#  define Q_REQUIRED_RESULT [[nodiscard]]
+#  define Q_REQUIRED_RESULT //Ivan [[nodiscard]]
 #endif
 
 /*
