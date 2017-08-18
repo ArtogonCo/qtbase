@@ -41,15 +41,19 @@
 #include "qitemeditorfactory.h"
 #include "qitemeditorfactory_p.h"
 
-#ifndef QT_NO_ITEMVIEWS
-
+#if QT_CONFIG(combobox)
 #include <qcombobox.h>
+#endif
+#if QT_CONFIG(datetimeedit)
 #include <qdatetimeedit.h>
+#endif
 #if QT_CONFIG(label)
 #include <qlabel.h>
 #endif
 #include <qlineedit.h>
 #include <qspinbox.h>
+#include <qstyle.h>
+#include <qstyleoption.h>
 #include <limits.h>
 #include <float.h>
 #include <qapplication.h>
@@ -60,7 +64,7 @@
 QT_BEGIN_NAMESPACE
 
 
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
 
 class QBooleanComboBox : public QComboBox
 {
@@ -73,7 +77,7 @@ public:
     bool value() const;
 };
 
-#endif // QT_NO_COMBOBOX
+#endif // QT_CONFIG(combobox)
 
 
 #ifndef QT_NO_SPINBOX
@@ -232,7 +236,7 @@ public:
 QWidget *QDefaultItemEditorFactory::createEditor(int userType, QWidget *parent) const
 {
     switch (userType) {
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
     case QVariant::Bool: {
         QBooleanComboBox *cb = new QBooleanComboBox(parent);
         cb->setFrame(false);
@@ -252,7 +256,7 @@ QWidget *QDefaultItemEditorFactory::createEditor(int userType, QWidget *parent) 
         sb->setMaximum(INT_MAX);
         return sb; }
 #endif
-#ifndef QT_NO_DATETIMEEDIT
+#if QT_CONFIG(datetimeedit)
     case QVariant::Date: {
         QDateTimeEdit *ed = new QDateEdit(parent);
         ed->setFrame(false);
@@ -298,7 +302,7 @@ QWidget *QDefaultItemEditorFactory::createEditor(int userType, QWidget *parent) 
 QByteArray QDefaultItemEditorFactory::valuePropertyName(int userType) const
 {
     switch (userType) {
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
     case QVariant::Bool:
         return "currentIndex";
 #endif
@@ -308,7 +312,7 @@ QByteArray QDefaultItemEditorFactory::valuePropertyName(int userType) const
     case QVariant::Double:
         return "value";
 #endif
-#ifndef QT_NO_DATETIMEEDIT
+#if QT_CONFIG(datetimeedit)
     case QVariant::Date:
         return "date";
     case QVariant::Time:
@@ -593,7 +597,7 @@ void QExpandingLineEdit::resizeToContents()
 
 #endif // QT_NO_LINEEDIT
 
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
 
 QBooleanComboBox::QBooleanComboBox(QWidget *parent)
     : QComboBox(parent)
@@ -612,14 +616,12 @@ bool QBooleanComboBox::value() const
     return (currentIndex() == 1);
 }
 
-#endif // QT_NO_COMBOBOX
+#endif // QT_CONFIG(combobox)
 
 QT_END_NAMESPACE
 
-#if !defined(QT_NO_LINEEDIT) || !defined(QT_NO_COMBOBOX)
+#if !defined(QT_NO_LINEEDIT) || QT_CONFIG(combobox)
 #include "qitemeditorfactory.moc"
 #endif
 
 #include "moc_qitemeditorfactory_p.cpp"
-
-#endif // QT_NO_ITEMVIEWS

@@ -39,8 +39,6 @@
 
 #include <QtWidgets/qmessagebox.h>
 
-#ifndef QT_NO_MESSAGEBOX
-
 #include <QtWidgets/qdialogbuttonbox.h>
 #include "private/qlabel_p.h"
 #include "private/qapplication_p.h"
@@ -57,7 +55,6 @@
 #include <QtGui/qtextdocument.h>
 #include <QtWidgets/qapplication.h>
 #include <QtWidgets/qtextedit.h>
-#include <QtWidgets/qtextbrowser.h>
 #include <QtWidgets/qmenu.h>
 #include "qdialog_p.h"
 #include <QtGui/qfont.h>
@@ -2737,5 +2734,3 @@ QT_END_NAMESPACE
 
 #include "moc_qmessagebox.cpp"
 #include "qmessagebox.moc"
-
-#endif // QT_NO_MESSAGEBOX

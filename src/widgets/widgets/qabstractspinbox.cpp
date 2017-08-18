@@ -49,7 +49,9 @@
 #include <qstylehints.h>
 #include <qclipboard.h>
 #include <qdatetime.h>
+#if QT_CONFIG(datetimeedit)
 #include <qdatetimeedit.h>
+#endif
 #include <qevent.h>
 #include <qmenu.h>
 #include <qpainter.h>
@@ -1119,7 +1121,7 @@ void QAbstractSpinBox::keyReleaseEvent(QKeyEvent *event)
     \reimp
 */
 
-#ifndef QT_NO_WHEELEVENT
+#if QT_CONFIG(wheelevent)
 void QAbstractSpinBox::wheelEvent(QWheelEvent *event)
 {
     Q_D(QAbstractSpinBox);

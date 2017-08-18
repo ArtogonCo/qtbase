@@ -59,6 +59,7 @@
 #include "qwindowsscreen.h"
 #include "qwindowstheme.h"
 
+#include <QtGui/qtguiglobal.h>
 #include <QtGui/QWindow>
 #include <qpa/qwindowsysteminterface.h>
 #include <qpa/qplatformnativeinterface.h>
@@ -823,6 +824,27 @@ static inline QWindowsInputContext *windowsInputContext()
     return qobject_cast<QWindowsInputContext *>(QWindowsIntegration::instance()->inputContext());
 }
 
+
+// Child windows, fixed-size windows or pop-ups and similar should not be resized
+static inline bool resizeOnDpiChanged(const QWindow *w)
+{
+    bool result = false;
+    if (w->isTopLevel()) {
+        switch (w->type()) {
+        case Qt::Window:
+        case Qt::Dialog:
+        case Qt::Sheet:
+        case Qt::Drawer:
+        case Qt::Tool:
+            result = !w->flags().testFlag(Qt::MSWindowsFixedSizeDialogHint);
+            break;
+        default:
+            break;
+        }
+    }
+    return result;
+}
+
 /*!
      \brief Main windows procedure registered for windows.
 
@@ -924,9 +946,9 @@ bool QWindowsContext::windowsProc(HWND hwnd, UINT message,
         return false;
 #endif
     case QtWindows::DisplayChangedEvent:
-        return d->m_screenManager.handleDisplayChange(wParam, lParam);
         if (QWindowsTheme *t = QWindowsTheme::instance())
             t->displayChanged();
+        return d->m_screenManager.handleDisplayChange(wParam, lParam);
     case QtWindows::SettingChangedEvent:
         return d->m_screenManager.handleScreenChanges();
     default:
@@ -948,8 +970,10 @@ bool QWindowsContext::windowsProc(HWND hwnd, UINT message,
             d->m_creationContext->obtainedGeometry.moveTo(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
             return true;
         case QtWindows::NonClientCreate:
-            if (QSysInfo::windowsVersion() >= QSysInfo::WV_WINDOWS10 && d->m_creationContext->window->isTopLevel())
+            if (QSysInfo::windowsVersion() >= QSysInfo::WV_WINDOWS10 && d->m_creationContext->window->isTopLevel()
+                && !d->m_creationContext->window->property(QWindowsWindow::embeddedNativeParentHandleProperty).isValid()) {
                 enableNonClientDpiScaling(msg.hwnd);
+            }
             return false;
         case QtWindows::CalculateSize:
             return QWindowsGeometryHint::handleCalculateSize(d->m_creationContext->customMargins, msg, result);
@@ -1077,10 +1101,10 @@ bool QWindowsContext::windowsProc(HWND hwnd, UINT message,
             *result = LRESULT(MA_NOACTIVATE);
             return true;
         }
-#ifndef QT_NO_TABLETEVENT
+#if QT_CONFIG(tabletevent)
         if (!d->m_tabletSupport.isNull())
             d->m_tabletSupport->notifyActivate();
-#endif // !QT_NO_TABLETEVENT
+#endif // QT_CONFIG(tabletevent)
         if (platformWindow->testFlag(QWindowsWindow::BlockedByModal))
             if (const QWindow *modalWindow = QGuiApplication::modalWindow()) {
                 QWindowsWindow *platformWindow = QWindowsWindow::windowsWindowOf(modalWindow);
@@ -1105,9 +1129,8 @@ bool QWindowsContext::windowsProc(HWND hwnd, UINT message,
 #endif
     }   break;
     case QtWindows::DpiChangedEvent: {
-        if (GetWindowLongPtr(hwnd, GWL_STYLE) & WS_DLGFRAME)
-            return false; // Fixed-size window should not be resized
-
+        if (!resizeOnDpiChanged(platformWindow->window()))
+            return false;
         platformWindow->setFlag(QWindowsWindow::WithinDpiChanged);
         const RECT *prcNewWindow = reinterpret_cast<RECT *>(lParam);
         SetWindowPos(hwnd, NULL, prcNewWindow->left, prcNewWindow->top,

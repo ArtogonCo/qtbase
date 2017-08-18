@@ -39,8 +39,6 @@
 
 #include "qglobal.h"
 
-#ifndef QT_NO_GRAPHICSVIEW
-
 #include "qgraphicslayout.h"
 #include "qgraphicsproxywidget.h"
 #include "private/qgraphicsproxywidget_p.h"
@@ -55,7 +53,6 @@
 #include <QtGui/qpainter.h>
 #include <QtWidgets/qstyleoption.h>
 #include <QtWidgets/qgraphicsview.h>
-#include <QtWidgets/qlistview.h>
 #include <QtWidgets/qlineedit.h>
 #include <QtWidgets/qtextedit.h>
 
@@ -1273,7 +1270,7 @@ void QGraphicsProxyWidget::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event
 /*!
     \reimp
 */
-#ifndef QT_NO_WHEELEVENT
+#if QT_CONFIG(wheelevent)
 void QGraphicsProxyWidget::wheelEvent(QGraphicsSceneWheelEvent *event)
 {
     Q_D(QGraphicsProxyWidget);
@@ -1607,5 +1604,3 @@ QGraphicsProxyWidget *QGraphicsProxyWidget::newProxyWidget(const QWidget *)
 QT_END_NAMESPACE
 
 #include "moc_qgraphicsproxywidget.cpp"
-
-#endif //QT_NO_GRAPHICSVIEW

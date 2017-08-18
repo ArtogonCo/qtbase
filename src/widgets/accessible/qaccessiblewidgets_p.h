@@ -256,7 +256,7 @@ public:
 };
 #endif
 
-#if !defined(QT_NO_TEXTBROWSER) && !defined(QT_NO_CURSOR)
+#if QT_CONFIG(textbrowser) && !defined(QT_NO_CURSOR)
 class QAccessibleTextBrowser : public QAccessibleTextEdit
 {
 public:
@@ -264,9 +264,9 @@ public:
 
     QAccessible::Role role() const Q_DECL_OVERRIDE;
 };
-#endif // QT_NO_TEXTBROWSER && QT_NO_CURSOR
+#endif // QT_CONFIG(textbrowser) && QT_NO_CURSOR
 
-#ifndef QT_NO_CALENDARWIDGET
+#if QT_CONFIG(calendarwidget)
 class QAccessibleCalendarWidget : public QAccessibleWidget
 {
 public:
@@ -284,9 +284,9 @@ private:
     QAbstractItemView *calendarView() const;
     QWidget *navigationBar() const;
 };
-#endif // QT_NO_CALENDARWIDGET
+#endif // QT_CONFIG(calendarwidget)
 
-#ifndef QT_NO_DOCKWIDGET
+#if QT_CONFIG(dockwidget)
 class QAccessibleDockWidget: public QAccessibleWidget
 {
 public:
@@ -302,7 +302,7 @@ protected:
     QDockWidgetLayout *dockWidgetLayout() const;
 };
 
-#endif // QT_NO_DOCKWIDGET
+#endif // QT_CONFIG(dockwidget)
 
 #ifndef QT_NO_MAINWINDOW
 class QAccessibleMainWindow : public QAccessibleWidget

@@ -47,11 +47,17 @@
 #include <QtGui/qmatrix.h>
 #include <QtWidgets/qslider.h>
 #include <QtWidgets/qstyle.h>
+#if QT_CONFIG(tabbar)
 #include <QtWidgets/qtabbar.h>
+#endif
+#if QT_CONFIG(tabwidget)
 #include <QtWidgets/qtabwidget.h>
+#endif
+#if QT_CONFIG(rubberband)
 #include <QtWidgets/qrubberband.h>
+#endif
 #include <QtWidgets/qframe.h>
-#ifndef QT_NO_ITEMVIEWS
+#if QT_CONFIG(itemviews)
 #   include <QtCore/qabstractitemmodel.h>
 #endif
 
@@ -141,7 +147,7 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(QStyleOptionFrame::FrameFeatures)
 typedef Q_DECL_DEPRECATED QStyleOptionFrame QStyleOptionFrameV2;
 typedef Q_DECL_DEPRECATED QStyleOptionFrame QStyleOptionFrameV3;
 
-#ifndef QT_NO_TABWIDGET
+#if QT_CONFIG(tabwidget)
 class Q_WIDGETS_EXPORT QStyleOptionTabWidgetFrame : public QStyleOption
 {
 public:
@@ -166,10 +172,10 @@ protected:
 };
 
 typedef Q_DECL_DEPRECATED QStyleOptionTabWidgetFrame QStyleOptionTabWidgetFrameV2;
-#endif // QT_NO_TABWIDGET
+#endif // QT_CONFIG(tabwidget)
 
 
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
 class Q_WIDGETS_EXPORT QStyleOptionTabBarBase : public QStyleOption
 {
 public:
@@ -189,7 +195,7 @@ protected:
 };
 
 typedef Q_DECL_DEPRECATED QStyleOptionTabBarBase QStyleOptionTabBarBaseV2;
-#endif // QT_NO_TABBAR
+#endif // QT_CONFIG(tabbar)
 
 class Q_WIDGETS_EXPORT QStyleOptionHeader : public QStyleOption
 {
@@ -243,7 +249,7 @@ protected:
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QStyleOptionButton::ButtonFeatures)
 
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
 class Q_WIDGETS_EXPORT QStyleOptionTab : public QStyleOption
 {
 public:
@@ -282,7 +288,7 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(QStyleOptionTab::CornerWidgets)
 
 typedef Q_DECL_DEPRECATED QStyleOptionTab QStyleOptionTabV2;
 typedef Q_DECL_DEPRECATED QStyleOptionTab QStyleOptionTabV3;
-#endif // QT_NO_TABBAR
+#endif // QT_CONFIG(tabbar)
 
 
 #ifndef QT_NO_TOOLBAR
@@ -386,7 +392,7 @@ protected:
 
 typedef Q_DECL_DEPRECATED QStyleOptionDockWidget QStyleOptionDockWidgetV2;
 
-#ifndef QT_NO_ITEMVIEWS
+#if QT_CONFIG(itemviews)
 
 class Q_WIDGETS_EXPORT QStyleOptionViewItem : public QStyleOption
 {
@@ -441,7 +447,7 @@ typedef Q_DECL_DEPRECATED QStyleOptionViewItem QStyleOptionViewItemV2;
 typedef Q_DECL_DEPRECATED QStyleOptionViewItem QStyleOptionViewItemV3;
 typedef Q_DECL_DEPRECATED QStyleOptionViewItem QStyleOptionViewItemV4;
 
-#endif // QT_NO_ITEMVIEWS
+#endif // QT_CONFIG(itemviews)
 
 class Q_WIDGETS_EXPORT QStyleOptionToolBox : public QStyleOption
 {
@@ -467,7 +473,7 @@ protected:
 
 typedef Q_DECL_DEPRECATED QStyleOptionToolBox QStyleOptionToolBoxV2;
 
-#ifndef QT_NO_RUBBERBAND
+#if QT_CONFIG(rubberband)
 class Q_WIDGETS_EXPORT QStyleOptionRubberBand : public QStyleOption
 {
 public:
@@ -483,7 +489,7 @@ public:
 protected:
     QStyleOptionRubberBand(int version);
 };
-#endif // QT_NO_RUBBERBAND
+#endif // QT_CONFIG(rubberband)
 
 // -------------------------- Complex style options -------------------------------
 class Q_WIDGETS_EXPORT QStyleOptionComplex : public QStyleOption

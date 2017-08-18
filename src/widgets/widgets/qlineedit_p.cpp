@@ -43,7 +43,9 @@
 #ifndef QT_NO_LINEEDIT
 
 #include "qvariant.h"
+#if QT_CONFIG(itemviews)
 #include "qabstractitemview.h"
+#endif
 #include "qdrag.h"
 #include "qwidgetaction.h"
 #include "qclipboard.h"
@@ -54,6 +56,7 @@
 #include "qinputmethod.h"
 #include "qlist.h"
 #endif
+#include <qpainter.h>
 #include <qpropertyanimation.h>
 
 QT_BEGIN_NAMESPACE

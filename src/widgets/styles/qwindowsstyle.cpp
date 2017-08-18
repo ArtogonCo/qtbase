@@ -51,17 +51,25 @@
 #include <private/qmenubar_p.h>
 #include "qpaintengine.h"
 #include "qpainter.h"
+#if QT_CONFIG(rubberband)
 #include "qrubberband.h"
+#endif
 #include "qstyleoption.h"
+#if QT_CONFIG(tabbar)
 #include "qtabbar.h"
+#endif
 #include "qwidget.h"
 #include "qdebug.h"
 #include "qmainwindow.h"
 #include "qfile.h"
 #include "qtextstream.h"
 #include "qpixmapcache.h"
+#if QT_CONFIG(wizard)
 #include "qwizard.h"
+#endif
+#if QT_CONFIG(listview)
 #include "qlistview.h"
+#endif
 #include <private/qmath_p.h>
 #include <qmath.h>
 #include <QtGui/qscreen.h>
@@ -328,7 +336,7 @@ int QWindowsStylePrivate::fixedPixelMetric(QStyle::PixelMetric pm)
         break;
     case QStyle::PM_DockWidgetSeparatorExtent:
         return 4;
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
     case QStyle::PM_TabBarTabShiftHorizontal:
         return 0;
     case QStyle::PM_TabBarTabShiftVertical:
@@ -544,7 +552,7 @@ int QWindowsStyle::styleHint(StyleHint hint, const QStyleOption *opt, const QWid
 
         break;
     case SH_ItemView_ShowDecorationSelected:
-#ifndef QT_NO_LISTVIEW
+#if QT_CONFIG(listview)
         if (qobject_cast<const QListView*>(widget))
             ret = 1;
 #endif
@@ -604,7 +612,7 @@ int QWindowsStyle::styleHint(StyleHint hint, const QStyleOption *opt, const QWid
             ret = 400;
         break;
     }
-#ifndef QT_NO_RUBBERBAND
+#if QT_CONFIG(rubberband)
     case SH_RubberBand_Mask:
         if (const QStyleOptionRubberBand *rbOpt = qstyleoption_cast<const QStyleOptionRubberBand *>(opt)) {
             ret = 0;
@@ -620,8 +628,8 @@ int QWindowsStyle::styleHint(StyleHint hint, const QStyleOption *opt, const QWid
             }
         }
         break;
-#endif // QT_NO_RUBBERBAND
-#ifndef QT_NO_WIZARD
+#endif // QT_CONFIG(rubberband)
+#if QT_CONFIG(wizard)
     case SH_WizardStyle:
         ret = QWizard::ModernStyle;
         break;
@@ -711,7 +719,7 @@ void QWindowsStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, 
     case PE_FrameButtonTool:
     case PE_PanelButtonTool: {
         QPen oldPen = p->pen();
-#ifndef QT_NO_DOCKWIDGET
+#if QT_CONFIG(dockwidget)
         if (w && w->inherits("QDockWidgetTitleButton")) {
            if (const QWidget *dw = w->parentWidget())
                 if (dw->isWindow()){
@@ -721,7 +729,7 @@ void QWindowsStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, 
                     return;
                 }
         }
-#endif // QT_NO_DOCKWIDGET
+#endif // QT_CONFIG(dockwidget)
         QBrush fill;
         bool stippled;
         bool panel = (pe == PE_PanelButtonTool);
@@ -1016,7 +1024,7 @@ void QWindowsStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, 
          popupPal.setColor(QPalette::Midlight, opt->palette.light().color());
          qDrawWinPanel(p, opt->rect, popupPal, opt->state & State_Sunken);
         break; }
-#ifndef QT_NO_DOCKWIDGET
+#if QT_CONFIG(dockwidget)
     case PE_IndicatorDockWidgetResizeHandle:
         break;
     case PE_FrameDockWidget:
@@ -1024,7 +1032,7 @@ void QWindowsStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, 
             proxy()->drawPrimitive(QStyle::PE_FrameWindow, opt, p, w);
         }
     break;
-#endif // QT_NO_DOCKWIDGET
+#endif // QT_CONFIG(dockwidget)
 
     case PE_FrameStatusBarItem:
         qDrawShadePanel(p, opt->rect, opt->palette, true, 1, 0);
@@ -1078,7 +1086,7 @@ void QWindowsStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPai
                                 const QWidget *widget) const
 {
     switch (ce) {
-#ifndef QT_NO_RUBBERBAND
+#if QT_CONFIG(rubberband)
     case CE_RubberBand:
         if (qstyleoption_cast<const QStyleOptionRubberBand *>(opt)) {
             // ### workaround for slow general painter path
@@ -1101,7 +1109,7 @@ void QWindowsStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPai
             return;
         }
         break;
-#endif // QT_NO_RUBBERBAND
+#endif // QT_CONFIG(rubberband)
 
 #if !defined(QT_NO_MENU) && !defined(QT_NO_MAINWINDOW)
     case CE_MenuBarEmptyArea:
@@ -1277,7 +1285,7 @@ void QWindowsStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPai
         }
         break;
 #endif // QT_NO_MENUBAR
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
     case CE_TabBarTabShape:
         if (const QStyleOptionTab *tab = qstyleoption_cast<const QStyleOptionTab *>(opt)) {
             bool rtlHorTabs = (tab->direction == Qt::RightToLeft
@@ -1480,18 +1488,18 @@ void QWindowsStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPai
             }
         }
         break;
-#endif // QT_NO_TABBAR
+#endif // QT_CONFIG(tabbar)
     case CE_ToolBoxTabShape:
         qDrawShadePanel(p, opt->rect, opt->palette,
                         opt->state & (State_Sunken | State_On), 1,
                         &opt->palette.brush(QPalette::Button));
         break;
-#ifndef QT_NO_SPLITTER
+#if QT_CONFIG(splitter)
     case CE_Splitter:
         p->eraseRect(opt->rect);
         break;
-#endif // QT_NO_SPLITTER
-#ifndef QT_NO_SCROLLBAR
+#endif // QT_CONFIG(splitter)
+#if QT_CONFIG(scrollbar)
     case CE_ScrollBarSubLine:
     case CE_ScrollBarAddLine: {
         if ((opt->state & State_Sunken)) {
@@ -1578,7 +1586,7 @@ void QWindowsStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPai
             qDrawWinButton(p, opt->rect, pal, false, &opt->palette.brush(QPalette::Button));
         }
         break;
-#endif // QT_NO_SCROLLBAR
+#endif // QT_CONFIG(scrollbar)
     case CE_HeaderSection: {
         QBrush fill;
         if (opt->state & State_On)
@@ -1613,6 +1621,7 @@ void QWindowsStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPai
                 default:
                     break;
                 }
+                Q_FALLTHROUGH(); // It continues in the end of the next case
             case Qt::TopToolBarArea :
                 switch(toolbar->positionWithinLine){
                 case QStyleOptionToolBar::Beginning:
@@ -1778,7 +1787,7 @@ void QWindowsStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPai
         }
         break;
 
-#ifndef QT_NO_DOCKWIDGET
+#if QT_CONFIG(dockwidget)
     case CE_DockWidgetTitle:
 
         if (const QStyleOptionDockWidget *dwOpt = qstyleoption_cast<const QStyleOptionDockWidget *>(opt)) {
@@ -1852,8 +1861,8 @@ void QWindowsStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPai
                 p->restore();
         }
         return;
-#endif // QT_NO_DOCKWIDGET
-#ifndef QT_NO_COMBOBOX
+#endif // QT_CONFIG(dockwidget)
+#if QT_CONFIG(combobox)
     case CE_ComboBoxLabel:
         if (const QStyleOptionComboBox *cb = qstyleoption_cast<const QStyleOptionComboBox *>(opt)) {
             if (cb->state & State_HasFocus) {
@@ -1866,7 +1875,7 @@ void QWindowsStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPai
         }
         QCommonStyle::drawControl(ce, opt, p, widget);
         break;
-#endif // QT_NO_COMBOBOX
+#endif // QT_CONFIG(combobox)
     default:
         QCommonStyle::drawControl(ce, opt, p, widget);
     }
@@ -2134,7 +2143,7 @@ void QWindowsStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComp
         }
         break;
 #endif // QT_NO_SLIDER
-#ifndef QT_NO_SCROLLBAR
+#if QT_CONFIG(scrollbar)
     case CC_ScrollBar:
         if (const QStyleOptionSlider *scrollbar = qstyleoption_cast<const QStyleOptionSlider *>(opt)) {
             QStyleOptionSlider newScrollbar = *scrollbar;
@@ -2143,8 +2152,8 @@ void QWindowsStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComp
             QCommonStyle::drawComplexControl(cc, &newScrollbar, p, widget);
         }
         break;
-#endif // QT_NO_SCROLLBAR
-#ifndef QT_NO_COMBOBOX
+#endif // QT_CONFIG(scrollbar)
+#if QT_CONFIG(combobox)
     case CC_ComboBox:
         if (const QStyleOptionComboBox *cmb = qstyleoption_cast<const QStyleOptionComboBox *>(opt)) {
             QBrush editBrush = cmb->palette.brush(QPalette::Base);
@@ -2217,7 +2226,7 @@ void QWindowsStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComp
             }
         }
         break;
-#endif // QT_NO_COMBOBOX
+#endif // QT_CONFIG(combobox)
 #ifndef QT_NO_SPINBOX
     case CC_SpinBox:
         if (const QStyleOptionSpinBox *sb = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {

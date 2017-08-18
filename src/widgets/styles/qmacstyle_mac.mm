@@ -51,16 +51,22 @@
 //#define DEBUG_SIZE_CONSTRAINT
 
 #include <private/qcore_mac_p.h>
-#include <private/qcombobox_p.h>
+#if QT_CONFIG(tabbar)
 #include <private/qtabbar_p.h>
+#endif
 #include <private/qpainter_p.h>
 #include <qapplication.h>
 #include <qbitmap.h>
+#if QT_CONFIG(combobox)
+#include <private/qcombobox_p.h>
 #include <qcombobox.h>
+#endif
 #if QT_CONFIG(dialogbuttonbox)
 #include <qdialogbuttonbox.h>
 #endif
+#if QT_CONFIG(dockwidget)
 #include <qdockwidget.h>
+#endif
 #include <qevent.h>
 #include <qfocusframe.h>
 #include <qformlayout.h>
@@ -75,27 +81,45 @@
 #include <qpainter.h>
 #include <qpixmapcache.h>
 #include <qpointer.h>
+#if QT_CONFIG(progressbar)
 #include <qprogressbar.h>
+#endif
 #if QT_CONFIG(pushbutton)
 #include <qpushbutton.h>
 #endif
 #include <qradiobutton.h>
+#if QT_CONFIG(rubberband)
 #include <qrubberband.h>
+#endif
+#if QT_CONFIG(scrollbar)
 #include <qscrollbar.h>
+#endif
 #include <qsizegrip.h>
 #include <qstyleoption.h>
 #include <qtoolbar.h>
+#if QT_CONFIG(toolbutton)
 #include <qtoolbutton.h>
+#endif
+#if QT_CONFIG(treeview)
 #include <qtreeview.h>
+#endif
+#if QT_CONFIG(tableview)
 #include <qtableview.h>
+#endif
 #include <qoperatingsystemversion.h>
+#if QT_CONFIG(wizard)
 #include <qwizard.h>
+#endif
 #include <qdebug.h>
 #include <qlibrary.h>
+#if QT_CONFIG(datetimeedit)
 #include <qdatetimeedit.h>
+#endif
 #include <qmath.h>
 #include <QtWidgets/qgraphicsproxywidget.h>
+#if QT_CONFIG(graphicsview)
 #include <QtWidgets/qgraphicsview.h>
+#endif
 #include <QtCore/qvariant.h>
 #include <private/qstylehelper_p.h>
 #include <private/qstyleanimation_p.h>
@@ -218,7 +242,7 @@ static const qreal closeButtonCornerRadius = 2.0;
 typedef HIRect * (*PtrHIShapeGetBounds)(HIShapeRef, HIRect *);
 static PtrHIShapeGetBounds ptrHIShapeGetBounds = 0;
 
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
 static bool isVerticalTabs(const QTabBar::Shape shape) {
     return (shape == QTabBar::RoundedEast
                 || shape == QTabBar::TriangularEast
@@ -240,7 +264,7 @@ static bool isInMacUnifiedToolbarArea(QWindow *window, int windowY)
 }
 
 
-void drawTabCloseButton(QPainter *p, bool hover, bool selected, bool pressed)
+static void drawTabCloseButton(QPainter *p, bool hover, bool selected, bool pressed, bool documentMode)
 {
     p->setRenderHints(QPainter::Antialiasing);
     QRect rect(0, 0, closeButtonSize, closeButtonSize);
@@ -251,10 +275,16 @@ void drawTabCloseButton(QPainter *p, bool hover, bool selected, bool pressed)
         // draw background circle
         QColor background;
         if (selected) {
-            background = pressed ? tabBarCloseButtonBackgroundSelectedPressed : tabBarCloseButtonBackgroundSelectedHovered;
+            if (documentMode)
+                background = pressed ? tabBarCloseButtonBackgroundSelectedPressed : tabBarCloseButtonBackgroundSelectedHovered;
+            else
+                background = QColor(255, 255, 255, pressed ? 150 : 100); // Translucent white
         } else {
             background = pressed ? tabBarCloseButtonBackgroundPressed : tabBarCloseButtonBackgroundHovered;
+            if (!documentMode)
+                background = background.lighter(pressed ? 135 : 140); // Lighter tab background, lighter color
         }
+
         p->setPen(Qt::transparent);
         p->setBrush(background);
         p->drawRoundedRect(rect, closeButtonCornerRadius, closeButtonCornerRadius);
@@ -263,7 +293,7 @@ void drawTabCloseButton(QPainter *p, bool hover, bool selected, bool pressed)
     // draw cross
     const int margin = 3;
     QPen crossPen;
-    crossPen.setColor(selected ? tabBarCloseButtonCrossSelected : tabBarCloseButtonCross);
+    crossPen.setColor(selected ? (documentMode ? tabBarCloseButtonCrossSelected : Qt::white) : tabBarCloseButtonCross);
     crossPen.setWidthF(1.1);
     crossPen.setCapStyle(Qt::FlatCap);
     p->setPen(crossPen);
@@ -271,7 +301,7 @@ void drawTabCloseButton(QPainter *p, bool hover, bool selected, bool pressed)
     p->drawLine(margin, height - margin, width - margin, margin);
 }
 
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
 QRect rotateTabPainter(QPainter *p, QTabBar::Shape shape, QRect tabRect)
 {
     if (isVerticalTabs(shape)) {
@@ -406,7 +436,7 @@ static int getControlSize(const QStyleOption *option, const QWidget *widget)
 }
 
 
-#ifndef QT_NO_TREEVIEW
+#if QT_CONFIG(treeview)
 static inline bool isTreeView(const QWidget *widget)
 {
     return (widget && widget->parentWidget() &&
@@ -415,7 +445,7 @@ static inline bool isTreeView(const QWidget *widget)
 }
 #endif
 
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
 static inline ThemeTabDirection getTabDirection(QTabBar::Shape shape)
 {
     ThemeTabDirection ttd;
@@ -627,17 +657,17 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
         else if (qobject_cast<const QCheckBox *>(widg))
             ct = QStyle::CT_CheckBox;
 #endif
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
         else if (qobject_cast<const QComboBox *>(widg))
             ct = QStyle::CT_ComboBox;
 #endif
-#ifndef QT_NO_TOOLBUTTON
+#if QT_CONFIG(toolbutton)
         else if (qobject_cast<const QToolButton *>(widg))
             ct = QStyle::CT_ToolButton;
 #endif
         else if (qobject_cast<const QSlider *>(widg))
             ct = QStyle::CT_Slider;
-#ifndef QT_NO_PROGRESSBAR
+#if QT_CONFIG(progressbar)
         else if (qobject_cast<const QProgressBar *>(widg))
             ct = QStyle::CT_ProgressBar;
 #endif
@@ -766,7 +796,7 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
         if (sz == QAquaSizeSmall) {
             int width = 0, height = 0;
             if (szHint == QSize(-1, -1)) { //just 'guess'..
-#ifndef QT_NO_TOOLBUTTON
+#if QT_CONFIG(toolbutton)
                 const QToolButton *bt = qobject_cast<const QToolButton *>(widg);
                 // If this conversion fails then the widget was not what it claimed to be.
                 if(bt) {
@@ -853,7 +883,7 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
             ret.setWidth(w);
         break;
     }
-#ifndef QT_NO_PROGRESSBAR
+#if QT_CONFIG(progressbar)
     case QStyle::CT_ProgressBar: {
         int finalValue = -1;
         Qt::Orientation orient = Qt::Horizontal;
@@ -873,7 +903,7 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
         break;
     }
 #endif
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
     case QStyle::CT_LineEdit:
         if (!widg || !qobject_cast<QComboBox *>(widg->parentWidget())) {
             //should I take into account the font dimentions of the lineedit? -Sam
@@ -885,7 +915,7 @@ static QSize qt_aqua_get_known_size(QStyle::ContentsType ct, const QWidget *widg
         break;
 #endif
     case QStyle::CT_HeaderSection:
-#ifndef QT_NO_TREEVIEW
+#if QT_CONFIG(treeview)
         if (isTreeView(widg))
            ret = QSize(-1, qt_mac_aqua_get_metric(kThemeMetricListHeaderHeight));
 #endif
@@ -1002,17 +1032,17 @@ void QMacStylePrivate::drawFocusRing(QPainter *p, const QRect &targetRect, int h
             NSBezierPath *focusRingPath;
             if (radius > 0) {
                 const CGFloat roundedRectInset = -1.5;
-                focusRingPath = [NSBezierPath bezierPathWithRoundedRect:CGRectInset(focusRingRect, roundedRectInset, roundedRectInset)
+                focusRingPath = [NSBezierPath bezierPathWithRoundedRect:NSRectFromCGRect(CGRectInset(focusRingRect, roundedRectInset, roundedRectInset))
                                                                 xRadius:radius
                                                                 yRadius:radius];
             } else {
                 const CGFloat outerClipInset = -focusRingWidth / 2;
-                NSBezierPath *focusRingClipPath = [NSBezierPath bezierPathWithRect:CGRectInset(focusRingRect, outerClipInset, outerClipInset)];
+                NSBezierPath *focusRingClipPath = [NSBezierPath bezierPathWithRect:NSRectFromCGRect(CGRectInset(focusRingRect, outerClipInset, outerClipInset))];
                 const CGFloat innerClipInset = 1;
-                NSBezierPath *focusRingInnerClipPath = [NSBezierPath bezierPathWithRect:CGRectInset(focusRingRect, innerClipInset, innerClipInset)];
+                NSBezierPath *focusRingInnerClipPath = [NSBezierPath bezierPathWithRect:NSRectFromCGRect(CGRectInset(focusRingRect, innerClipInset, innerClipInset))];
                 [focusRingClipPath appendBezierPath:focusRingInnerClipPath.bezierPathByReversingPath];
                 [focusRingClipPath setClip];
-                focusRingPath = [NSBezierPath bezierPathWithRect:focusRingRect];
+                focusRingPath = [NSBezierPath bezierPathWithRect:NSRectFromCGRect(focusRingRect)];
                 focusRingPath.lineJoinStyle = NSRoundLineJoinStyle;
             }
 
@@ -1057,10 +1087,11 @@ void QMacStylePrivate::drawFocusRing(QPainter *p, const QRect &targetRect, int h
                   QRect(focusRingPixmap.width() - shCornerSize, svCornerSize, shCornerSize, focusRingPixmap.width() - 2 * svCornerSize));
 }
 
-#ifndef QT_NO_TABBAR
-void QMacStylePrivate::tabLayout(const QStyleOptionTab *opt, const QWidget *widget, QRect *textRect) const
+#if QT_CONFIG(tabbar)
+void QMacStylePrivate::tabLayout(const QStyleOptionTab *opt, const QWidget *widget, QRect *textRect, QRect *iconRect) const
 {
     Q_ASSERT(textRect);
+    Q_ASSERT(iconRect);
     QRect tr = opt->rect;
     const bool verticalTabs = opt->shape == QTabBar::RoundedEast
                               || opt->shape == QTabBar::RoundedWest
@@ -1094,12 +1125,37 @@ void QMacStylePrivate::tabLayout(const QStyleOptionTab *opt, const QWidget *widg
             tr.setLeft(tr.left() + 4 + buttonSize);
     }
 
+    // icon
+    if (!opt->icon.isNull()) {
+        QSize iconSize = opt->iconSize;
+        if (!iconSize.isValid()) {
+            int iconExtent = proxyStyle->pixelMetric(QStyle::PM_SmallIconSize);
+            iconSize = QSize(iconExtent, iconExtent);
+        }
+        QSize tabIconSize = opt->icon.actualSize(iconSize,
+                        (opt->state & QStyle::State_Enabled) ? QIcon::Normal : QIcon::Disabled,
+                        (opt->state & QStyle::State_Selected) ? QIcon::On : QIcon::Off);
+        // High-dpi icons do not need adjustment; make sure tabIconSize is not larger than iconSize
+        tabIconSize = QSize(qMin(tabIconSize.width(), iconSize.width()), qMin(tabIconSize.height(), iconSize.height()));
+
+        *iconRect = QRect(tr.left(), tr.center().y() - tabIconSize.height() / 2,
+                    tabIconSize.width(), tabIconSize.height());
+        if (!verticalTabs)
+            *iconRect = proxyStyle->visualRect(opt->direction, opt->rect, *iconRect);
+
+        int stylePadding = proxyStyle->pixelMetric(QStyle::PM_TabBarTabHSpace, opt, widget) / 2;
+        stylePadding -= hpadding;
+
+        tr.setLeft(tr.left() + stylePadding + tabIconSize.width() + 4);
+        tr.setRight(tr.right() - stylePadding - tabIconSize.width() - 4);
+    }
+
     if (!verticalTabs)
         tr = proxyStyle->visualRect(opt->direction, opt->rect, tr);
 
     *textRect = tr;
 }
-#endif //QT_NO_TABBAR
+#endif // QT_CONFIG(tabbar)
 
 QAquaWidgetSize QMacStylePrivate::effectiveAquaSizeConstrain(const QStyleOption *option,
                                                             const QWidget *widg,
@@ -1360,7 +1416,7 @@ void QMacStylePrivate::initComboboxBdi(const QStyleOptionComboBox *combo, HIThem
         // an extra check here before using the mini and small buttons.
         int h = combo->rect.size().height();
         if (combo->editable){
-#ifndef QT_NO_DATETIMEEDIT
+#if QT_CONFIG(datetimeedit)
             if (qobject_cast<const QDateTimeEdit *>(widget)) {
                 // Except when, you know, we get a QDateTimeEdit with calendarPopup
                 // enabled. And then things get weird, basically because it's a
@@ -2227,7 +2283,7 @@ void QMacStyle::polish(QWidget* w)
 
 #ifndef QT_NO_MENU
     if (qobject_cast<QMenu*>(w)
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
             || qobject_cast<QComboBoxPrivateContainer *>(w)
 #endif
             ) {
@@ -2252,7 +2308,7 @@ void QMacStyle::polish(QWidget* w)
     }
 #endif
 
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
     if (QTabBar *tb = qobject_cast<QTabBar*>(w)) {
         if (tb->documentMode()) {
             w->setAttribute(Qt::WA_Hover);
@@ -2260,6 +2316,8 @@ void QMacStyle::polish(QWidget* w)
             QPalette p = w->palette();
             p.setColor(QPalette::WindowText, QColor(17, 17, 17));
             w->setPalette(p);
+            w->setAttribute(Qt::WA_SetPalette, false);
+            w->setAttribute(Qt::WA_SetFont, false);
         }
     }
 #endif
@@ -2293,12 +2351,21 @@ void QMacStyle::unpolish(QWidget* w)
         w->setWindowOpacity(1.0);
     }
 
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
     if (QComboBox *combo = qobject_cast<QComboBox *>(w)) {
         if (!combo->isEditable()) {
             if (QWidget *widget = combo->findChild<QComboBoxPrivateContainer *>())
                 widget->setWindowOpacity(1.0);
         }
+    }
+#endif
+
+#if QT_CONFIG(tabbar)
+    if (qobject_cast<QTabBar*>(w)) {
+        if (!w->testAttribute(Qt::WA_SetFont))
+            w->setFont(qApp->font(w));
+        if (!w->testAttribute(Qt::WA_SetPalette))
+            w->setPalette(qApp->palette(w));
     }
 #endif
 
@@ -2818,7 +2885,7 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
         ret = QEvent::MouseButtonRelease;
         break;
     case SH_TabBar_SelectMouseType:
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
         if (const QStyleOptionTabBarBase *opt2 = qstyleoption_cast<const QStyleOptionTabBarBase *>(opt)) {
             ret = opt2->documentMode ? QEvent::MouseButtonPress : QEvent::MouseButtonRelease;
         } else
@@ -2843,7 +2910,7 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
         ret = Qt::AlignRight;
         break;
     case SH_TabBar_Alignment: {
-#ifndef QT_NO_TABWIDGET
+#if QT_CONFIG(tabwidget)
         if (const QTabWidget *tab = qobject_cast<const QTabWidget*>(w)) {
             if (tab->documentMode()) {
                 ret = Qt::AlignLeft;
@@ -2851,7 +2918,7 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
             }
         }
 #endif
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
         if (const QTabBar *tab = qobject_cast<const QTabBar*>(w)) {
             if (tab->documentMode()) {
                 ret = Qt::AlignLeft;
@@ -2990,7 +3057,7 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
     case SH_FocusFrame_AboveWidget:
         ret = true;
         break;
-#ifndef QT_NO_WIZARD
+#if QT_CONFIG(wizard)
     case SH_WizardStyle:
         ret = QWizard::MacStyle;
         break;
@@ -3028,7 +3095,7 @@ int QMacStyle::styleHint(StyleHint sh, const QStyleOption *opt, const QWidget *w
     case SH_ItemView_PaintAlternatingRowColorsForEmptyArea:
         ret = true;
         break;
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
     case SH_TabBar_CloseButtonPosition:
         ret = QTabBar::LeftSide;
         break;
@@ -3184,7 +3251,7 @@ void QMacStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPai
         p->drawPath(path);
         p->restore();
         break; }
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
     case PE_FrameTabBarBase:
         if (const QStyleOptionTabBarBase *tbb
                 = qstyleoption_cast<const QStyleOptionTabBarBase *>(opt)) {
@@ -3232,7 +3299,7 @@ void QMacStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPai
                 HIThemeGroupBoxDrawInfo gdi;
                 gdi.version = qt_mac_hitheme_version;
                 gdi.state = tds;
-#ifndef QT_NO_GROUPBOX
+#if QT_CONFIG(groupbox)
                 if (w && qobject_cast<QGroupBox *>(w->parentWidget()))
                     gdi.kind = kHIThemeGroupBoxKindSecondary;
                 else
@@ -3510,7 +3577,7 @@ void QMacStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPai
         }
 
         break;
-#ifndef QT_NO_TABWIDGET
+#if QT_CONFIG(tabwidget)
     case PE_FrameTabWidget:
         if (const QStyleOptionTabWidgetFrame *twf
                 = qstyleoption_cast<const QStyleOptionTabWidgetFrame *>(opt)) {
@@ -3538,14 +3605,16 @@ void QMacStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPai
     case PE_IndicatorTabClose: {
         // Make close button visible only on the hovered tab.
         if (QTabBar *tabBar = qobject_cast<QTabBar*>(w->parentWidget())) {
+            const bool documentMode = tabBar->documentMode();
             const QTabBarPrivate *tabBarPrivate = static_cast<QTabBarPrivate *>(QObjectPrivate::get(tabBar));
             const int hoveredTabIndex = tabBarPrivate->hoveredTabIndex();
-            if (hoveredTabIndex != -1 && ((w == tabBar->tabButton(hoveredTabIndex, QTabBar::LeftSide)) ||
-                                          (w == tabBar->tabButton(hoveredTabIndex, QTabBar::RightSide)))) {
+            if (!documentMode ||
+                (hoveredTabIndex != -1 && ((w == tabBar->tabButton(hoveredTabIndex, QTabBar::LeftSide)) ||
+                                           (w == tabBar->tabButton(hoveredTabIndex, QTabBar::RightSide))))) {
                 const bool hover = (opt->state & State_MouseOver);
                 const bool selected = (opt->state & State_Selected);
                 const bool pressed = (opt->state & State_Sunken);
-                drawTabCloseButton(p, hover, selected, pressed);
+                drawTabCloseButton(p, hover, selected, pressed, documentMode);
             }
         }
         } break;
@@ -3676,7 +3745,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
             HIRect bounds = qt_hirectForQRect(ir);
 
             bool noVerticalHeader = true;
-#ifndef QT_NO_TABLEVIEW
+#if QT_CONFIG(tableview)
             if (w)
                 if (const QTableView *table = qobject_cast<const QTableView *>(w->parentWidget()))
                     noVerticalHeader = !table->verticalHeader()->isVisible();
@@ -4081,7 +4150,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
             QCommonStyle::drawControl(CE_ComboBoxLabel, &comboCopy, p, w);
         }
         break;
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
     case CE_TabBarTabShape:
         if (const QStyleOptionTab *tabOpt = qstyleoption_cast<const QStyleOptionTab *>(opt)) {
             if (tabOpt->documentMode) {
@@ -4210,6 +4279,12 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
             // outside world, unless they read the source, in which case, it's
             // their own fault).
             bool nonDefaultFont = p->font() != qt_app_fonts_hash()->value("QComboMenuItem");
+
+            if (!myTab.documentMode && (myTab.state & State_Selected) && (myTab.state & State_Active))
+                if (const auto *tabBar = qobject_cast<const QTabBar *>(w))
+                    if (!tabBar->tabTextColor(tabBar->currentIndex()).isValid())
+                        myTab.palette.setColor(QPalette::WindowText, Qt::white);
+
             if (verticalTabs || nonDefaultFont || !tab->icon.isNull()
                 || !myTab.leftButtonSize.isEmpty() || !myTab.rightButtonSize.isEmpty()) {
                 int heightOffset = 0;
@@ -4261,7 +4336,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
         }
         break;
 #endif
-#ifndef QT_NO_DOCKWIDGET
+#if QT_CONFIG(dockwidget)
     case CE_DockWidgetTitle:
         if (const QDockWidget *dockWidget = qobject_cast<const QDockWidget *>(w)) {
             bool floating = dockWidget->isFloating();
@@ -4428,7 +4503,7 @@ void QMacStyle::drawControl(ControlElement ce, const QStyleOption *opt, QPainter
                 // Always be normal or disabled to follow the Mac style.
                 int smallIconSize = proxy()->pixelMetric(PM_SmallIconSize);
                 QSize iconSize(smallIconSize, smallIconSize);
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
                 if (const QComboBox *comboBox = qobject_cast<const QComboBox *>(w)) {
                     iconSize = comboBox->iconSize();
                 }
@@ -4876,7 +4951,7 @@ QRect QMacStyle::subElementRect(SubElement sr, const QStyleOption *opt,
                   int(outRect.size.height));
         break;
     }
-#ifndef QT_NO_TABWIDGET
+#if QT_CONFIG(tabwidget)
     case SE_TabWidgetLeftCorner:
         if (const QStyleOptionTabWidgetFrame *twf
                 = qstyleoption_cast<const QStyleOptionTabWidgetFrame *>(opt)) {
@@ -4940,7 +5015,8 @@ QRect QMacStyle::subElementRect(SubElement sr, const QStyleOption *opt,
         break;
     case SE_TabBarTabText:
         if (const QStyleOptionTab *tab = qstyleoption_cast<const QStyleOptionTab *>(opt)) {
-            d->tabLayout(tab, widget, &rect);
+            QRect dummyIconRect;
+            d->tabLayout(tab, widget, &rect, &dummyIconRect);
         }
         break;
     case SE_TabBarTabLeftButton:
@@ -5008,7 +5084,7 @@ QRect QMacStyle::subElementRect(SubElement sr, const QStyleOption *opt,
 #endif
     case SE_LineEditContents:
         rect = QCommonStyle::subElementRect(sr, opt, widget);
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
         if (widget && qobject_cast<const QComboBox*>(widget->parentWidget()))
             rect.adjust(-1, -2, 0, 0);
         else
@@ -5152,7 +5228,7 @@ QRect QMacStyle::subElementRect(SubElement sr, const QStyleOption *opt,
         }
         rect.setBottom(rect.bottom() - 1);
         break;
-#ifndef QT_NO_TABWIDGET
+#if QT_CONFIG(tabwidget)
     case SE_TabWidgetLayoutItem:
         if (const QStyleOptionTabWidgetFrame *tabWidgetOpt =
                 qstyleoption_cast<const QStyleOptionTabWidgetFrame *>(opt)) {
@@ -5167,7 +5243,7 @@ QRect QMacStyle::subElementRect(SubElement sr, const QStyleOption *opt,
         }
         break;
 #endif
-#ifndef QT_NO_DOCKWIDGET
+#if QT_CONFIG(dockwidget)
         case SE_DockWidgetCloseButton:
         case SE_DockWidgetFloatButton:
         case SE_DockWidgetTitleBarText:
@@ -6038,7 +6114,7 @@ void QMacStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComplex 
 #endif
         }
         break;
-#ifndef QT_NO_DIAL
+#if QT_CONFIG(dial)
     case CC_Dial:
         if (const QStyleOptionSlider *dial = qstyleoption_cast<const QStyleOptionSlider *>(opt))
             QStyleHelper::drawDial(dial, p);
@@ -6586,7 +6662,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
              * overlap is how much the pane should overlap the tab bar
         */
         // then add the size between the stackwidget and the "contentsRect"
-#ifndef QT_NO_TABWIDGET
+#if QT_CONFIG(tabwidget)
         if (const QStyleOptionTabWidgetFrame *twf
                 = qstyleoption_cast<const QStyleOptionTabWidgetFrame *>(opt)) {
             QSize extra(0,0);
@@ -6602,7 +6678,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
         }
 #endif
         break;
-#ifndef QT_NO_TABBAR
+#if QT_CONFIG(tabbar)
     case QStyle::CT_TabBarTab:
         if (const QStyleOptionTab *tab = qstyleoption_cast<const QStyleOptionTab *>(opt)) {
             const QAquaWidgetSize AquaSize = d->aquaSizeConstrain(opt, widget);
@@ -6685,7 +6761,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
     case QStyle::CT_MenuItem:
         if (const QStyleOptionMenuItem *mi = qstyleoption_cast<const QStyleOptionMenuItem *>(opt)) {
             int maxpmw = mi->maxIconWidth;
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
             const QComboBox *comboBox = qobject_cast<const QComboBox *>(widget);
 #endif
             int w = sz.width(),
@@ -6698,7 +6774,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
             } else {
                 h = mi->fontMetrics.height() + 2;
                 if (!mi->icon.isNull()) {
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
                     if (comboBox) {
                         const QSize &iconSize = comboBox->iconSize();
                         h = qMax(h, iconSize.height() + 4);
@@ -6719,7 +6795,7 @@ QSize QMacStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt,
                 w += maxpmw + 6;
             // add space for a check. All items have place for a check too.
             w += 20;
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
             if (comboBox && comboBox->isVisible()) {
                 QStyleOptionComboBox cmb;
                 cmb.initFrom(comboBox);
@@ -6893,7 +6969,7 @@ bool QMacStyle::event(QEvent *e)
     if(e->type() == QEvent::FocusIn) {
         QWidget *f = 0;
         QWidget *focusWidget = QApplication::focusWidget();
-#ifndef QT_NO_GRAPHICSVIEW
+#if QT_CONFIG(graphicsview)
         if (QGraphicsView *graphicsView = qobject_cast<QGraphicsView *>(focusWidget)) {
             QGraphicsItem *focusItem = graphicsView->scene() ? graphicsView->scene()->focusItem() : 0;
             if (focusItem && focusItem->type() == QGraphicsProxyWidget::Type) {

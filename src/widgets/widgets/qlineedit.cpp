@@ -60,7 +60,6 @@
 #include "qvalidator.h"
 #include "qvariant.h"
 #include "qvector.h"
-#include "qwhatsthis.h"
 #include "qdebug.h"
 #include "qtextedit.h"
 #include <private/qtextedit_p.h>
@@ -69,7 +68,9 @@
 #ifndef QT_NO_ACCESSIBILITY
 #include "qaccessible.h"
 #endif
+#if QT_CONFIG(itemviews)
 #include "qabstractitemview.h"
+#endif
 #include "private/qstylesheetstyle_p.h"
 
 #ifndef QT_NO_SHORTCUT
@@ -956,7 +957,7 @@ QString QLineEdit::selectedText() const
 }
 
 /*!
-    selectionStart() returns the index of the first selected character in the
+    Returns the index of the first selected character in the
     line edit or -1 if no text is selected.
 
     \sa selectedText()
@@ -1187,6 +1188,7 @@ QMargins QLineEdit::textMargins() const
     \row \li \c > \li All following alphabetic characters are uppercased.
     \row \li \c < \li All following alphabetic characters are lowercased.
     \row \li \c ! \li Switch off case conversion.
+    \row \li \c {[ ] { }} \li Reserved.
     \row \li \tt{\\} \li Use \tt{\\} to escape the special
                            characters listed above to use them as
                            separators.
@@ -1771,7 +1773,7 @@ QVariant QLineEdit::inputMethodQuery(Qt::InputMethodQuery property, QVariant arg
             return QVariant(d->xToPos(pt.x(), QTextLine::CursorBetweenCharacters));
         return QVariant(d->control->cursor()); }
     case Qt::ImSurroundingText:
-        return QVariant(d->control->text());
+        return QVariant(d->control->surroundingText());
     case Qt::ImCurrentSelection:
         return QVariant(selectedText());
     case Qt::ImMaximumTextLength:

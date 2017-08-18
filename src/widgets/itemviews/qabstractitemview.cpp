@@ -39,7 +39,6 @@
 
 #include "qabstractitemview.h"
 
-#ifndef QT_NO_ITEMVIEWS
 #include <qpointer.h>
 #include <qapplication.h>
 #include <qclipboard.h>
@@ -48,13 +47,10 @@
 #include <qdrag.h>
 #include <qevent.h>
 #include <qscrollbar.h>
-#include <qwhatsthis.h>
 #include <qtooltip.h>
 #include <qdatetime.h>
 #include <qlineedit.h>
 #include <qspinbox.h>
-#include <qtreeview.h>
-#include <qtableview.h>
 #include <qheaderview.h>
 #include <qstyleditemdelegate.h>
 #include <private/qabstractitemview_p.h>
@@ -174,7 +170,7 @@ void QAbstractItemViewPrivate::checkMouseMove(const QPersistentModelIndex &index
 
         if (index.isValid()) {
             emit q->entered(index);
-#ifndef QT_NO_STATUSTIP
+#if QT_CONFIG(statustip)
             QString statustip = model->data(index, Qt::StatusTipRole).toString();
             if (parent && (shouldClearStatusTip || !statustip.isEmpty())) {
                 QStatusTipEvent tip(statustip);
@@ -183,7 +179,7 @@ void QAbstractItemViewPrivate::checkMouseMove(const QPersistentModelIndex &index
             }
 #endif
         } else {
-#ifndef QT_NO_STATUSTIP
+#if QT_CONFIG(statustip)
             if (parent && shouldClearStatusTip) {
                 QString emptyString;
                 QStatusTipEvent tip( emptyString );
@@ -1704,7 +1700,7 @@ bool QAbstractItemView::viewportEvent(QEvent *event)
         break;
     case QEvent::Leave:
         d->setHoverIndex(QModelIndex()); // If we've left, no hover should be needed anymore
-    #ifndef QT_NO_STATUSTIP
+    #if QT_CONFIG(statustip)
         if (d->shouldClearStatusTip && d->parent) {
             QString empty;
             QStatusTipEvent tip(empty);
@@ -1929,7 +1925,7 @@ void QAbstractItemView::mouseReleaseEvent(QMouseEvent *event)
         QStyleOptionViewItem option = d->viewOptionsV1();
         if (d->pressedAlreadySelected)
             option.state |= QStyle::State_Selected;
-        if ((model()->flags(index) & Qt::ItemIsEnabled)
+        if ((d->model->flags(index) & Qt::ItemIsEnabled)
             && style()->styleHint(QStyle::SH_ItemView_ActivateItemOnSingleClick, &option, this))
             emit activated(index);
     }
@@ -4493,5 +4489,3 @@ QModelIndexList QAbstractItemViewPrivate::selectedDraggableIndexes() const
 QT_END_NAMESPACE
 
 #include "moc_qabstractitemview.cpp"
-
-#endif // QT_NO_ITEMVIEWS

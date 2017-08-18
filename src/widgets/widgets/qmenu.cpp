@@ -59,14 +59,16 @@
 #ifndef QT_NO_EFFECTS
 # include <private/qeffects_p.h>
 #endif
-#ifndef QT_NO_WHATSTHIS
+#if QT_CONFIG(whatsthis)
 # include <qwhatsthis.h>
 #endif
 
 #include "qmenu_p.h"
 #include "qmenubar_p.h"
 #include "qwidgetaction.h"
+#if QT_CONFIG(toolbutton)
 #include "qtoolbutton.h"
+#endif
 #include "qpushbutton.h"
 #include "qtooltip.h"
 #include <private/qpushbutton_p.h>
@@ -187,7 +189,7 @@ private:
 void QMenuPrivate::init()
 {
     Q_Q(QMenu);
-#ifndef QT_NO_WHATSTHIS
+#if QT_CONFIG(whatsthis)
     q->setAttribute(Qt::WA_CustomWhatsThis);
 #endif
     q->setAttribute(Qt::WA_X11NetWmWindowTypePopupMenu);
@@ -261,20 +263,23 @@ int QMenuPrivate::scrollerHeight() const
 }
 
 //Windows and KDE allows menus to cover the taskbar, while GNOME and Mac don't
-QRect QMenuPrivate::popupGeometry(const QWidget *widget) const
+QRect QMenuPrivate::popupGeometry() const
 {
-    if (QGuiApplicationPrivate::platformTheme() &&
+    Q_Q(const QMenu);
+    if (!tornoff && // Torn-off menus are different
+            QGuiApplicationPrivate::platformTheme() &&
             QGuiApplicationPrivate::platformTheme()->themeHint(QPlatformTheme::UseFullScreenForPopupMenu).toBool()) {
-        return QApplication::desktop()->screenGeometry(widget);
+        return QApplication::desktop()->screenGeometry(q);
     } else {
-        return QApplication::desktop()->availableGeometry(widget);
+        return QApplication::desktop()->availableGeometry(q);
     }
 }
 
 //Windows and KDE allows menus to cover the taskbar, while GNOME and Mac don't
 QRect QMenuPrivate::popupGeometry(int screen) const
 {
-    if (QGuiApplicationPrivate::platformTheme() &&
+    if (!tornoff && // Torn-off menus are different
+            QGuiApplicationPrivate::platformTheme() &&
             QGuiApplicationPrivate::platformTheme()->themeHint(QPlatformTheme::UseFullScreenForPopupMenu).toBool()) {
         return QApplication::desktop()->screenGeometry(screen);
     } else {
@@ -299,8 +304,7 @@ QVector<QPointer<QWidget> > QMenuPrivate::calcCausedStack() const
 
 void QMenuPrivate::updateActionRects() const
 {
-    Q_Q(const QMenu);
-    updateActionRects(popupGeometry(q));
+    updateActionRects(popupGeometry());
 }
 
 void QMenuPrivate::updateActionRects(const QRect &screen) const
@@ -657,7 +661,7 @@ void QMenuPrivate::setCurrentAction(QAction *action, int popup, SelectionReason 
                 }
             }
         }
-#ifndef QT_NO_STATUSTIP
+#if QT_CONFIG(statustip)
     }  else if (previousAction) {
         previousAction->d_func()->showStatusText(topCausedWidget(), QString());
 #endif
@@ -1067,7 +1071,7 @@ void QMenuPrivate::scrollMenu(QAction *action, QMenuScroller::ScrollLocation loc
     if (newScrollFlags & QMenuScroller::ScrollUp)
         newOffset -= vmargin;
 
-    QRect screen = popupGeometry(q);
+    QRect screen = popupGeometry();
     const int desktopFrame = q->style()->pixelMetric(QStyle::PM_MenuDesktopFrameWidth, 0, q);
     if (q->height() < screen.height()-(desktopFrame*2)-1) {
         QRect geom = q->geometry();
@@ -1327,12 +1331,12 @@ void QMenuPrivate::activateCausedStack(const QVector<QPointer<QWidget> > &caused
 void QMenuPrivate::activateAction(QAction *action, QAction::ActionEvent action_e, bool self)
 {
     Q_Q(QMenu);
-#ifndef QT_NO_WHATSTHIS
+#if QT_CONFIG(whatsthis)
     bool inWhatsThisMode = QWhatsThis::inWhatsThisMode();
 #endif
     if (!action || !q->isEnabled()
         || (action_e == QAction::Trigger
-#ifndef QT_NO_WHATSTHIS
+#if QT_CONFIG(whatsthis)
             && !inWhatsThisMode
 #endif
             && (action->isSeparator() ||!action->isEnabled())))
@@ -1343,7 +1347,7 @@ void QMenuPrivate::activateAction(QAction *action, QAction::ActionEvent action_e
     */
     const QVector<QPointer<QWidget> > causedStack = calcCausedStack();
     if (action_e == QAction::Trigger) {
-#ifndef QT_NO_WHATSTHIS
+#if QT_CONFIG(whatsthis)
         if (!inWhatsThisMode)
             actionAboutToTrigger = action;
 #endif
@@ -1362,7 +1366,7 @@ void QMenuPrivate::activateAction(QAction *action, QAction::ActionEvent action_e
             }
         }
 
-#ifndef QT_NO_WHATSTHIS
+#if QT_CONFIG(whatsthis)
         if (inWhatsThisMode) {
             QString s = action->whatsThis();
             if (s.isEmpty())
@@ -2317,10 +2321,10 @@ void QMenu::popup(const QPoint &p, QAction *atAction)
     const bool actionListChanged = d->itemsDirty;
 
     QRect screen;
-#ifndef QT_NO_GRAPHICSVIEW
+#if QT_CONFIG(graphicsview)
     bool isEmbedded = !bypassGraphicsProxyWidget(this) && d->nearestGraphicsProxyWidget(this);
     if (isEmbedded)
-        screen = d->popupGeometry(this);
+        screen = d->popupGeometry();
     else
 #endif
     screen = d->popupGeometry(QApplication::desktop()->screenNumber(p));
@@ -2797,7 +2801,7 @@ void QMenu::paintEvent(QPaintEvent *e)
     style()->drawControl(QStyle::CE_MenuEmptyArea, &menuOpt, &p, this);
 }
 
-#ifndef QT_NO_WHEELEVENT
+#if QT_CONFIG(wheelevent)
 /*!
   \reimp
 */
@@ -2971,7 +2975,7 @@ QMenu::event(QEvent *e)
         }
         break;
 #endif // QT_NO_TOOLTIP
-#ifndef QT_NO_WHATSTHIS
+#if QT_CONFIG(whatsthis)
     case QEvent::QueryWhatsThis:
         e->setAccepted(d->whatsThis.size());
         if (QAction *action = d->actionAt(static_cast<QHelpEvent*>(e)->pos())) {
@@ -3233,7 +3237,7 @@ void QMenu::keyPressEvent(QKeyEvent *e)
         key_consumed = true;
         break; }
 
-#ifndef QT_NO_WHATSTHIS
+#if QT_CONFIG(whatsthis)
     case Qt::Key_F1:
         if (!d->currentAction || d->currentAction->whatsThis().isNull())
             break;
@@ -3587,10 +3591,10 @@ void QMenu::internalDelayedPopup()
     d->activeMenu->d_func()->causedPopup.action = d->currentAction;
 
     QRect screen;
-#ifndef QT_NO_GRAPHICSVIEW
+#if QT_CONFIG(graphicsview)
     bool isEmbedded = !bypassGraphicsProxyWidget(this) && d->nearestGraphicsProxyWidget(this);
     if (isEmbedded)
-        screen = d->popupGeometry(this);
+        screen = d->popupGeometry();
     else
 #endif
     screen = d->popupGeometry(QApplication::desktop()->screenNumber(pos()));

@@ -43,16 +43,22 @@
 
 #include "qaction.h"
 #include "qapplication.h"
+#if QT_CONFIG(groupbox)
 #include "qgroupbox.h"
+#endif
 #if QT_CONFIG(label)
 #include "qlabel.h"
 #endif
 #include "qtooltip.h"
+#if QT_CONFIG(whatsthis)
 #include "qwhatsthis.h"
+#endif
 #include "qwidget.h"
 #include "qdebug.h"
 #include <qmath.h>
+#if QT_CONFIG(rubberband)
 #include <QRubberBand>
+#endif
 #include <QFocusFrame>
 #include <QMenu>
 #include <QtWidgets/private/qwidget_p.h>
@@ -91,7 +97,7 @@ static QString buddyString(const QWidget *widget)
     }
 #endif
 
-#ifndef QT_NO_GROUPBOX
+#if QT_CONFIG(groupbox)
     QGroupBox *groupbox = qobject_cast<QGroupBox*>(parent);
     if (groupbox)
         return groupbox->title();
@@ -327,7 +333,7 @@ QAccessibleWidget::relations(QAccessible::Relation match /*= QAccessible::AllRel
                 }
             }
 #endif
-#ifndef QT_NO_GROUPBOX
+#if QT_CONFIG(groupbox)
             QGroupBox *groupbox = qobject_cast<QGroupBox*>(parent);
             if (groupbox && !groupbox->title().isEmpty()) {
                 QAccessibleInterface *iface = QAccessible::queryAccessibleInterface(groupbox);
@@ -436,7 +442,7 @@ QString QAccessibleWidget::text(QAccessible::Text t) const
 #endif
         break;
     case QAccessible::Help:
-#ifndef QT_NO_WHATSTHIS
+#if QT_CONFIG(whatsthis)
         str = widget()->whatsThis();
 #endif
         break;

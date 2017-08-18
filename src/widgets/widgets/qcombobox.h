@@ -46,9 +46,9 @@
 #include <QtCore/qabstractitemmodel.h>
 #include <QtCore/qvariant.h>
 
-QT_BEGIN_NAMESPACE
+QT_REQUIRE_CONFIG(combobox);
 
-#ifndef QT_NO_COMBOBOX
+QT_BEGIN_NAMESPACE
 
 class QAbstractItemView;
 class QLineEdit;
@@ -234,7 +234,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *e) Q_DECL_OVERRIDE;
     void keyPressEvent(QKeyEvent *e) Q_DECL_OVERRIDE;
     void keyReleaseEvent(QKeyEvent *e) Q_DECL_OVERRIDE;
-#ifndef QT_NO_WHEELEVENT
+#if QT_CONFIG(wheelevent)
     void wheelEvent(QWheelEvent *e) Q_DECL_OVERRIDE;
 #endif
 #ifndef QT_NO_CONTEXTMENU
@@ -276,8 +276,6 @@ inline void QComboBox::addItem(const QIcon &aicon, const QString &atext,
 inline void QComboBox::insertItem(int aindex, const QString &atext,
                                   const QVariant &auserData)
 { insertItem(aindex, QIcon(), atext, auserData); }
-
-#endif // QT_NO_COMBOBOX
 
 QT_END_NAMESPACE
 

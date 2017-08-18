@@ -49,17 +49,25 @@
 #include <QPixmapCache>
 #include <QStyleOption>
 #include <QString>
+#if QT_CONFIG(progressbar)
 #include <QProgressBar>
+#endif
 #include <QSlider>
 #include <QEvent>
+#if QT_CONFIG(combobox)
 #include <QComboBox>
+#endif
+#if QT_CONFIG(itemviews)
 #include <QAbstractItemView>
-#include <QListView>
-#include <QTreeView>
 #include <QStyledItemDelegate>
+#endif
+#if QT_CONFIG(listview)
+#include <QListView>
+#endif
 #include <QAbstractScrollArea>
+#if QT_CONFIG(scrollbar)
 #include <QScrollBar>
-
+#endif
 #if QT_CONFIG(scroller)
 #include <qscroller.h>
 #endif

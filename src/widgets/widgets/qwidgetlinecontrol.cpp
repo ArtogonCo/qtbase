@@ -41,7 +41,9 @@
 
 #ifndef QT_NO_LINEEDIT
 
+#if QT_CONFIG(itemviews)
 #include "qabstractitemview.h"
+#endif
 #include "qclipboard.h"
 #include <private/qguiapplication_p.h>
 #include <qpa/qplatformtheme.h>
@@ -51,7 +53,7 @@
 #endif
 
 #include "qapplication.h"
-#ifndef QT_NO_GRAPHICSVIEW
+#if QT_CONFIG(graphicsview)
 #include "qgraphicssceneevent.h"
 #endif
 
@@ -548,9 +550,9 @@ void QWidgetLineControl::processInputMethodEvent(QInputMethodEvent *event)
     if (!event->commitString().isEmpty()) {
         internalInsert(event->commitString());
         cursorPositionChanged = true;
+    } else {
+        m_cursor = qBound(0, c, m_text.length());
     }
-
-    m_cursor = qBound(0, c, m_text.length());
 
     for (int i = 0; i < event->attributes().size(); ++i) {
         const QInputMethodEvent::Attribute &a = event->attributes().at(i);
@@ -973,12 +975,20 @@ void QWidgetLineControl::parseInputMask(const QString &maskFields)
     // calculate m_maxLength / m_maskData length
     m_maxLength = 0;
     QChar c = 0;
+    bool escaped = false;
     for (int i=0; i<m_inputMask.length(); i++) {
         c = m_inputMask.at(i);
-        if (i > 0 && m_inputMask.at(i-1) == QLatin1Char('\\')) {
-            m_maxLength++;
-            continue;
+        if (escaped) {
+           ++m_maxLength;
+           escaped = false;
+           continue;
         }
+
+        if (c == '\\') {
+           escaped = true;
+           continue;
+        }
+
         if (c != QLatin1Char('\\') && c != QLatin1Char('!') &&
              c != QLatin1Char('<') && c != QLatin1Char('>') &&
              c != QLatin1Char('{') && c != QLatin1Char('}') &&

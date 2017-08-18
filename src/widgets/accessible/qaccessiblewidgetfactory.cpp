@@ -43,10 +43,16 @@
 #include "simplewidgets_p.h"
 #include "rangecontrols_p.h"
 #include "complexwidgets_p.h"
+#if QT_CONFIG(itemviews)
 #include "itemviews_p.h"
+#endif
 
+#if QT_CONFIG(toolbutton)
 #include <qtoolbutton.h>
+#endif
+#if QT_CONFIG(treeview)
 #include <qtreeview.h>
+#endif
 #include <qvariant.h>
 #include <qaccessible.h>
 
@@ -77,7 +83,7 @@ QAccessibleInterface *qAccessibleFactory(const QString &classname, QObject *obje
         else
             iface = new QAccessibleLineEdit(widget);
 #endif
-#ifndef QT_NO_COMBOBOX
+#if QT_CONFIG(combobox)
     } else if (classname == QLatin1String("QComboBox")) {
         iface = new QAccessibleComboBox(widget);
 #endif
@@ -89,7 +95,7 @@ QAccessibleInterface *qAccessibleFactory(const QString &classname, QObject *obje
     } else if (classname == QLatin1String("QDoubleSpinBox")) {
         iface = new QAccessibleDoubleSpinBox(widget);
 #endif
-#ifndef QT_NO_SCROLLBAR
+#if QT_CONFIG(scrollbar)
     } else if (classname == QLatin1String("QScrollBar")) {
         iface = new QAccessibleScrollBar(widget);
 #endif
@@ -99,10 +105,10 @@ QAccessibleInterface *qAccessibleFactory(const QString &classname, QObject *obje
     } else if (classname == QLatin1String("QSlider")) {
         iface = new QAccessibleSlider(widget);
 #endif
-#ifndef QT_NO_TOOLBUTTON
+#if QT_CONFIG(toolbutton)
     } else if (classname == QLatin1String("QToolButton")) {
         iface = new QAccessibleToolButton(widget);
-#endif // QT_NO_TOOLBUTTON
+#endif // QT_CONFIG(toolbutton)
 #if QT_CONFIG(abstractbutton)
     } else if (classname == QLatin1String("QCheckBox")
             || classname == QLatin1String("QRadioButton")
@@ -120,13 +126,13 @@ QAccessibleInterface *qAccessibleFactory(const QString &classname, QObject *obje
 #endif
     } else if (classname == QLatin1String("QLabel") || classname == QLatin1String("QLCDNumber")) {
         iface = new QAccessibleDisplay(widget);
-#ifndef QT_NO_GROUPBOX
+#if QT_CONFIG(groupbox)
     } else if (classname == QLatin1String("QGroupBox")) {
         iface = new QAccessibleGroupBox(widget);
 #endif
     } else if (classname == QLatin1String("QStatusBar")) {
         iface = new QAccessibleDisplay(widget);
-#ifndef QT_NO_PROGRESSBAR
+#if QT_CONFIG(progressbar)
     } else if (classname == QLatin1String("QProgressBar")) {
         iface = new QAccessibleProgressBar(widget);
 #endif
@@ -140,22 +146,22 @@ QAccessibleInterface *qAccessibleFactory(const QString &classname, QObject *obje
     } else if (classname == QLatin1String("QMenu")) {
         iface = new QAccessibleMenu(widget);
 #endif
-#ifndef QT_NO_TREEVIEW
+#if QT_CONFIG(treeview)
     } else if (classname == QLatin1String("QTreeView")) {
         iface = new QAccessibleTree(widget);
-#endif // QT_NO_TREEVIEW
-#ifndef QT_NO_ITEMVIEWS
+#endif // QT_CONFIG(treeview)
+#if QT_CONFIG(itemviews)
     } else if (classname == QLatin1String("QTableView") || classname == QLatin1String("QListView")) {
         iface = new QAccessibleTable(widget);
     // ### This should be cleaned up. We return the parent for the scrollarea to hide it.
-#endif // QT_NO_ITEMVIEWS
-#ifndef QT_NO_TABBAR
+#endif // QT_CONFIG(itemviews)
+#if QT_CONFIG(tabbar)
     } else if (classname == QLatin1String("QTabBar")) {
         iface = new QAccessibleTabBar(widget);
 #endif
     } else if (classname == QLatin1String("QSizeGrip")) {
         iface = new QAccessibleWidget(widget, QAccessible::Grip);
-#ifndef QT_NO_SPLITTER
+#if QT_CONFIG(splitter)
     } else if (classname == QLatin1String("QSplitter")) {
         iface = new QAccessibleWidget(widget, QAccessible::Splitter);
     } else if (classname == QLatin1String("QSplitterHandle")) {
@@ -175,7 +181,7 @@ QAccessibleInterface *qAccessibleFactory(const QString &classname, QObject *obje
     } else if (classname == QLatin1String("QStackedWidget")) {
         iface = new QAccessibleStackedWidget(widget);
 #endif
-#ifndef QT_NO_TOOLBOX
+#if QT_CONFIG(toolbox)
     } else if (classname == QLatin1String("QToolBox")) {
         iface = new QAccessibleToolBox(widget);
 #endif
@@ -189,15 +195,15 @@ QAccessibleInterface *qAccessibleFactory(const QString &classname, QObject *obje
     } else if (classname == QLatin1String("QDialogButtonBox")) {
         iface = new QAccessibleDialogButtonBox(widget);
 #endif
-#ifndef QT_NO_DIAL
+#if QT_CONFIG(dial)
     } else if (classname == QLatin1String("QDial")) {
         iface = new QAccessibleDial(widget);
 #endif
-#ifndef QT_NO_RUBBERBAND
+#if QT_CONFIG(rubberband)
     } else if (classname == QLatin1String("QRubberBand")) {
         iface = new QAccessibleWidget(widget, QAccessible::Border);
 #endif
-#if !defined(QT_NO_TEXTBROWSER) && !defined(QT_NO_CURSOR)
+#if QT_CONFIG(textbrowser) && !defined(QT_NO_CURSOR)
     } else if (classname == QLatin1String("QTextBrowser")) {
         iface = new QAccessibleTextBrowser(widget);
 #endif
@@ -207,11 +213,11 @@ QAccessibleInterface *qAccessibleFactory(const QString &classname, QObject *obje
     } else if (classname == QLatin1String("QScrollArea")) {
         iface = new QAccessibleScrollArea(widget);
 #endif
-#ifndef QT_NO_CALENDARWIDGET
+#if QT_CONFIG(calendarwidget)
     } else if (classname == QLatin1String("QCalendarWidget")) {
         iface = new QAccessibleCalendarWidget(widget);
 #endif
-#ifndef QT_NO_DOCKWIDGET
+#if QT_CONFIG(dockwidget)
     } else if (classname == QLatin1String("QDockWidget")) {
         iface = new QAccessibleDockWidget(widget);
 #endif

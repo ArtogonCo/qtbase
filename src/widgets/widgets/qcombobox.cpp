@@ -39,7 +39,6 @@
 
 #include "qcombobox.h"
 
-#ifndef QT_NO_COMBOBOX
 #include <qstylepainter.h>
 #include <qpa/qplatformtheme.h>
 #include <qpa/qplatformmenu.h>
@@ -47,14 +46,18 @@
 #include <qapplication.h>
 #include <qdesktopwidget.h>
 #include <qlistview.h>
+#if QT_CONFIG(tableview)
 #include <qtableview.h>
+#endif
 #include <qitemdelegate.h>
 #include <qmap.h>
 #include <qmenu.h>
 #include <qevent.h>
 #include <qlayout.h>
 #include <qscrollbar.h>
+#if QT_CONFIG(treeview)
 #include <qtreeview.h>
+#endif
 #include <qheaderview.h>
 #include <qmath.h>
 #include <qmetaobject.h>
@@ -475,7 +478,7 @@ QComboBoxPrivateContainer::QComboBoxPrivateContainer(QAbstractItemView *itemView
 
 void QComboBoxPrivateContainer::scrollItemView(int action)
 {
-#ifndef QT_NO_SCROLLBAR
+#if QT_CONFIG(scrollbar)
     if (view->verticalScrollBar())
         view->verticalScrollBar()->triggerAction(static_cast<QAbstractSlider::SliderAction>(action));
 #endif
@@ -486,7 +489,7 @@ void QComboBoxPrivateContainer::scrollItemView(int action)
 */
 void QComboBoxPrivateContainer::updateScrollers()
 {
-#ifndef QT_NO_SCROLLBAR
+#if QT_CONFIG(scrollbar)
     if (!top || !bottom)
         return;
 
@@ -513,7 +516,7 @@ void QComboBoxPrivateContainer::updateScrollers()
         top->hide();
         bottom->hide();
     }
-#endif // QT_NO_SCROLLBAR
+#endif // QT_CONFIG(scrollbar)
 }
 
 /*
@@ -544,7 +547,7 @@ void QComboBoxPrivateContainer::setItemView(QAbstractItemView *itemView)
     if (view) {
         view->removeEventFilter(this);
         view->viewport()->removeEventFilter(this);
-#ifndef QT_NO_SCROLLBAR
+#if QT_CONFIG(scrollbar)
         disconnect(view->verticalScrollBar(), SIGNAL(valueChanged(int)),
                    this, SLOT(updateScrollers()));
         disconnect(view->verticalScrollBar(), SIGNAL(rangeChanged(int,int)),
@@ -569,7 +572,7 @@ void QComboBoxPrivateContainer::setItemView(QAbstractItemView *itemView)
     view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     QStyleOptionComboBox opt = comboStyleOption();
     const bool usePopup = combo->style()->styleHint(QStyle::SH_ComboBox_Popup, &opt, combo);
-#ifndef QT_NO_SCROLLBAR
+#if QT_CONFIG(scrollbar)
     if (usePopup)
         view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 #endif
@@ -581,7 +584,7 @@ void QComboBoxPrivateContainer::setItemView(QAbstractItemView *itemView)
     view->setFrameStyle(QFrame::NoFrame);
     view->setLineWidth(0);
     view->setEditTriggers(QAbstractItemView::NoEditTriggers);
-#ifndef QT_NO_SCROLLBAR
+#if QT_CONFIG(scrollbar)
     connect(view->verticalScrollBar(), SIGNAL(valueChanged(int)),
             this, SLOT(updateScrollers()));
     connect(view->verticalScrollBar(), SIGNAL(rangeChanged(int,int)),
@@ -598,7 +601,7 @@ int QComboBoxPrivateContainer::topMargin() const
 {
     if (const QListView *lview = qobject_cast<const QListView*>(view))
         return lview->spacing();
-#ifndef QT_NO_TABLEVIEW
+#if QT_CONFIG(tableview)
     if (const QTableView *tview = qobject_cast<const QTableView*>(view))
         return tview->showGrid() ? 1 : 0;
 #endif
@@ -613,7 +616,7 @@ int QComboBoxPrivateContainer::spacing() const
     QListView *lview = qobject_cast<QListView*>(view);
     if (lview)
         return 2 * lview->spacing(); // QListView::spacing is the padding around the item.
-#ifndef QT_NO_TABLEVIEW
+#if QT_CONFIG(tableview)
     QTableView *tview = qobject_cast<QTableView*>(view);
     if (tview)
         return tview->showGrid() ? 1 : 0;
@@ -738,7 +741,7 @@ void QComboBoxPrivateContainer::hideEvent(QHideEvent *)
 {
     emit resetButton();
     combo->update();
-#ifndef QT_NO_GRAPHICSVIEW
+#if QT_CONFIG(graphicsview)
     // QGraphicsScenePrivate::removePopup closes the combo box popup, it hides it non-explicitly.
     // Hiding/showing the QComboBox after this will unexpectedly show the popup as well.
     // Re-hiding the popup container makes sure it is explicitly hidden.
@@ -2600,7 +2603,7 @@ void QComboBox::showPopup()
         int count = 0;
         QStack<QModelIndex> toCheck;
         toCheck.push(view()->rootIndex());
-#ifndef QT_NO_TREEVIEW
+#if QT_CONFIG(treeview)
         QTreeView *treeView = qobject_cast<QTreeView*>(view());
         if (treeView && treeView->header() && !treeView->header()->isHidden())
             listHeight += treeView->header()->height();
@@ -2612,7 +2615,7 @@ void QComboBox::showPopup()
                 if (!idx.isValid())
                     continue;
                 listHeight += view()->visualRect(idx).height();
-#ifndef QT_NO_TREEVIEW
+#if QT_CONFIG(treeview)
                 if (d->model->hasChildren(idx) && treeView && treeView->isExpanded(idx))
                     toCheck.push(idx);
 #endif
@@ -3285,7 +3288,7 @@ void QComboBox::keyReleaseEvent(QKeyEvent *e)
 /*!
     \reimp
 */
-#ifndef QT_NO_WHEELEVENT
+#if QT_CONFIG(wheelevent)
 void QComboBox::wheelEvent(QWheelEvent *e)
 {
 #ifdef Q_OS_DARWIN
@@ -3482,5 +3485,3 @@ QT_END_NAMESPACE
 
 #include "moc_qcombobox.cpp"
 #include "moc_qcombobox_p.cpp"
-
-#endif // QT_NO_COMBOBOX
