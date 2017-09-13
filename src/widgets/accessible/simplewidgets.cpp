@@ -70,14 +70,17 @@
 #if QT_CONFIG(lcdnumber)
 #include <qlcdnumber.h>
 #endif
+#if QT_CONFIG(lineedit)
 #include <qlineedit.h>
 #include <private/qlineedit_p.h>
+#endif
 #include <qstyle.h>
 #include <qstyleoption.h>
 #include <qtextdocument.h>
 #include <qwindow.h>
 #include <private/qwindowcontainer_p.h>
 #include <QtCore/qvarlengtharray.h>
+#include <QtGui/qvalidator.h>
 
 #ifdef Q_OS_MAC
 #include <qfocusframe.h>
@@ -658,7 +661,7 @@ QStringList QAccessibleGroupBox::keyBindingsForAction(const QString &) const
 
 #endif
 
-#ifndef QT_NO_LINEEDIT
+#if QT_CONFIG(lineedit)
 /*!
   \class QAccessibleLineEdit
   \brief The QAccessibleLineEdit class implements the QAccessibleInterface for widgets with editable text
@@ -895,7 +898,7 @@ void QAccessibleLineEdit::replaceText(int startOffset, int endOffset, const QStr
     lineEdit()->setText(lineEdit()->text().replace(startOffset, endOffset - startOffset, text));
 }
 
-#endif // QT_NO_LINEEDIT
+#endif // QT_CONFIG(lineedit)
 
 #if QT_CONFIG(progressbar)
 QAccessibleProgressBar::QAccessibleProgressBar(QWidget *o)

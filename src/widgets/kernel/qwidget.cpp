@@ -2436,7 +2436,7 @@ void QWidgetPrivate::paintBackground(QPainter *painter, const QRegion &rgn, int 
 {
     Q_Q(const QWidget);
 
-#ifndef QT_NO_SCROLLAREA
+#if QT_CONFIG(scrollarea)
     bool resetBrushOrigin = false;
     QPointF oldBrushOrigin;
     //If we are painting the viewport of a scrollarea, we must apply an offset to the brush in case we are drawing a texture
@@ -2449,7 +2449,7 @@ void QWidgetPrivate::paintBackground(QPainter *painter, const QRegion &rgn, int 
         painter->setBrushOrigin(-priv->contentsOffset());
 
     }
-#endif // QT_NO_SCROLLAREA
+#endif // QT_CONFIG(scrollarea)
 
     const QBrush autoFillBrush = q->palette().brush(q->backgroundRole());
 
@@ -2476,10 +2476,10 @@ void QWidgetPrivate::paintBackground(QPainter *painter, const QRegion &rgn, int 
         q->style()->drawPrimitive(QStyle::PE_Widget, &opt, painter, q);
     }
 
-#ifndef QT_NO_SCROLLAREA
+#if QT_CONFIG(scrollarea)
     if (resetBrushOrigin)
         painter->setBrushOrigin(oldBrushOrigin);
-#endif // QT_NO_SCROLLAREA
+#endif // QT_CONFIG(scrollarea)
 }
 
 /*
@@ -7255,7 +7255,8 @@ void QWidgetPrivate::setGeometry_sys(int x, int y, int w, int h, bool isMove)
     QRect r(x, y, w, h);
 
     bool isResize = olds != r.size();
-    isMove = oldp != r.topLeft(); //### why do we have isMove as a parameter?
+    if (!isMove)
+        isMove = oldp != r.topLeft();
 
 
     // We only care about stuff that changes the geometry, or may
@@ -7289,12 +7290,17 @@ void QWidgetPrivate::setGeometry_sys(int x, int y, int w, int h, bool isMove)
 
     if (q->isVisible()) {
         if (!q->testAttribute(Qt::WA_DontShowOnScreen) && !q->testAttribute(Qt::WA_OutsideWSRange)) {
-            if (q->windowHandle()) {
+            if (QWindow *win = q->windowHandle()) {
                 if (q->isWindow()) {
-                    q->windowHandle()->setGeometry(q->geometry());
+                    if (isResize && !isMove)
+                        win->resize(w, h);
+                    else if (isMove && !isResize)
+                        win->setPosition(x, y);
+                    else
+                        win->setGeometry(q->geometry());
                 } else {
                     QPoint posInNativeParent =  q->mapTo(q->nativeParentWidget(),QPoint());
-                    q->windowHandle()->setGeometry(QRect(posInNativeParent,r.size()));
+                    win->setGeometry(QRect(posInNativeParent,r.size()));
                 }
 
                 if (needsShow)

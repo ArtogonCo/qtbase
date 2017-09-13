@@ -49,7 +49,9 @@
 #include <qpainter.h>
 #include <qstylepainter.h>
 #include <qevent.h>
+#if QT_CONFIG(mainwindow)
 #include <qmainwindow.h>
+#endif
 #include <qtoolbar.h>
 #if QT_CONFIG(toolbutton)
 #include <qtoolbutton.h>
@@ -60,9 +62,6 @@
 #include <qpa/qplatformtheme.h>
 #include "private/qguiapplication_p.h"
 #include "qpa/qplatformintegration.h"
-
-#ifndef QT_NO_MENUBAR
-
 
 #include "qmenu_p.h"
 #include "qmenubar_p.h"
@@ -1874,9 +1873,6 @@ QPlatformMenuBar *QMenuBar::platformMenuBar()
 
 // for private slots
 
-
 QT_END_NAMESPACE
 
 #include <moc_qmenubar.cpp>
-
-#endif // QT_NO_MENUBAR

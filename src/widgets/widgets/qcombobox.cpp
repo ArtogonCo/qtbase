@@ -70,12 +70,12 @@
 #include <private/qabstractscrollarea_p.h>
 #include <private/qlineedit_p.h>
 #include <qdebug.h>
-#if 0 /* Used to be included in Qt4 for Q_WS_MAC */ && !defined(QT_NO_EFFECTS) && QT_CONFIG(style_mac)
+#if 0 /* Used to be included in Qt4 for Q_WS_MAC */ && QT_CONFIG(effetcts) && QT_CONFIG(style_mac)
 #include <private/qcore_mac_p.h>
 #include <private/qmacstyle_mac_p.h>
 #include <private/qt_cocoa_helpers_mac_p.h>
 #endif
-#ifndef QT_NO_EFFECTS
+#if QT_CONFIG(effects)
 # include <private/qeffects_p.h>
 #endif
 #ifndef QT_NO_ACCESSIBILITY
@@ -107,7 +107,7 @@ QComboBoxPrivate::QComboBoxPrivate()
 #ifdef Q_OS_MAC
       , m_platformMenu(0)
 #endif
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
       , completer(0)
 #endif
 {
@@ -193,7 +193,7 @@ QStyleOptionMenuItem QComboMenuDelegate::getStyleOption(const QStyleOptionViewIt
     return menuOption;
 }
 
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
 void QComboBoxPrivate::_q_completerActivated(const QModelIndex &index)
 {
     Q_Q(QComboBox);
@@ -214,7 +214,7 @@ void QComboBoxPrivate::_q_completerActivated(const QModelIndex &index)
     }
 #  endif // QT_KEYPAD_NAVIGATION
 }
-#endif // !QT_NO_COMPLETER
+#endif // QT_CONFIG(completer)
 
 void QComboBoxPrivate::updateArrow(QStyle::StateFlag state)
 {
@@ -1196,7 +1196,7 @@ Qt::MatchFlags QComboBoxPrivate::matchFlags() const
 {
     // Base how duplicates are determined on the autocompletion case sensitivity
     Qt::MatchFlags flags = Qt::MatchFixedString;
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
     if (!lineEdit->completer() || lineEdit->completer()->caseSensitivity() == Qt::CaseSensitive)
 #endif
         flags |= Qt::MatchCaseSensitive;
@@ -1425,7 +1425,7 @@ int QComboBox::maxCount() const
     return d->maxCount;
 }
 
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
 
 /*!
     \property QComboBox::autoCompletion
@@ -1520,7 +1520,7 @@ void QComboBox::setAutoCompletionCaseSensitivity(Qt::CaseSensitivity sensitivity
         d->lineEdit->completer()->setCaseSensitivity(sensitivity);
 }
 
-#endif // QT_NO_COMPLETER
+#endif // QT_CONFIG(completer)
 
 /*!
     \property QComboBox::duplicatesEnabled
@@ -1802,12 +1802,12 @@ void QComboBox::setLineEdit(QLineEdit *edit)
     d->updateFocusPolicy();
     d->lineEdit->setFocusProxy(this);
     d->lineEdit->setAttribute(Qt::WA_MacShowFocusRect, false);
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
     setAutoCompletion(d->autoCompletion);
 #endif
 
 #ifdef QT_KEYPAD_NAVIGATION
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
     if (QApplication::keypadNavigationEnabled()) {
         // Editable combo boxes will have a completer that is set to UnfilteredPopupCompletion.
         // This means that when the user enters edit mode they are immediately presented with a
@@ -1871,7 +1871,7 @@ const QValidator *QComboBox::validator() const
 }
 #endif // QT_NO_VALIDATOR
 
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
 
 /*!
     \fn void QComboBox::setCompleter(QCompleter *completer)
@@ -1911,7 +1911,7 @@ QCompleter *QComboBox::completer() const
     return d->lineEdit ? d->lineEdit->completer() : 0;
 }
 
-#endif // QT_NO_COMPLETER
+#endif // QT_CONFIG(completer)
 
 /*!
     Returns the item delegate used by the popup list view.
@@ -1977,7 +1977,7 @@ void QComboBox::setModel(QAbstractItemModel *model)
     if (model == d->model)
         return;
 
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
     if (d->lineEdit && d->lineEdit->completer()
         && d->lineEdit->completer() == d->completer)
         d->lineEdit->completer()->setModel(model);
@@ -2123,7 +2123,7 @@ void QComboBoxPrivate::setCurrentIndex(const QModelIndex &mi)
         const QString newText = itemText(normalized);
         if (lineEdit->text() != newText) {
             lineEdit->setText(newText); // may cause lineEdit -> nullptr (QTBUG-54191)
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
             if (lineEdit && lineEdit->completer())
                 lineEdit->completer()->setCompletionPrefix(newText);
 #endif
@@ -2574,7 +2574,7 @@ void QComboBox::showPopup()
 #endif // Q_OS_MAC
 
 #ifdef QT_KEYPAD_NAVIGATION
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
     if (QApplication::keypadNavigationEnabled() && d->completer) {
         // editable combo box is line edit plus completer
         setEditFocus(true);
@@ -2731,7 +2731,7 @@ void QComboBox::showPopup()
     const bool updatesEnabled = container->updatesEnabled();
 #endif
 
-#if !defined(QT_NO_EFFECTS)
+#if QT_CONFIG(effects)
     bool scrollDown = (listRect.topLeft() == below);
     if (QApplication::isEffectEnabled(Qt::UI_AnimateCombo)
         && !style->styleHint(QStyle::SH_ComboBox_Popup, &opt, this) && !window()->testAttribute(Qt::WA_DontShowOnScreen))
@@ -2803,7 +2803,7 @@ void QComboBox::hidePopup()
 {
     Q_D(QComboBox);
     if (d->container && d->container->isVisible()) {
-#if !defined(QT_NO_EFFECTS)
+#if QT_CONFIG(effects)
         QSignalBlocker modelBlocker(d->model);
         QSignalBlocker viewBlocker(d->container->itemView());
         QSignalBlocker containerBlocker(d->container);
@@ -2847,7 +2847,7 @@ void QComboBox::hidePopup()
         modelBlocker.unblock();
 
         if (!didFade)
-#endif // QT_NO_EFFECTS
+#endif // QT_CONFIG(effects)
             // Fade should implicitly hide as well ;-)
             d->container->hide();
     }
@@ -2911,7 +2911,7 @@ void QComboBox::focusInEvent(QFocusEvent *e)
     update();
     if (d->lineEdit) {
         d->lineEdit->event(e);
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
         if (d->lineEdit->completer())
             d->lineEdit->completer()->setWidget(this);
 #endif
@@ -3137,7 +3137,7 @@ void QComboBox::keyPressEvent(QKeyEvent *e)
 {
     Q_D(QComboBox);
 
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
     if (d->lineEdit
         && d->lineEdit->completer()
         && d->lineEdit->completer()->popup()
@@ -3473,7 +3473,7 @@ void QComboBox::setModelColumn(int visibleColumn)
     QListView *lv = qobject_cast<QListView *>(d->viewContainer()->itemView());
     if (lv)
         lv->setModelColumn(visibleColumn);
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
     if (d->lineEdit && d->lineEdit->completer()
         && d->lineEdit->completer() == d->completer)
         d->lineEdit->completer()->setCompletionColumn(visibleColumn);

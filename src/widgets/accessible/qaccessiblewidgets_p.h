@@ -216,7 +216,7 @@ protected:
     QToolBox *toolBox() const;
 };
 
-#ifndef QT_NO_MDIAREA
+#if QT_CONFIG(mdiarea)
 class QAccessibleMdiArea : public QAccessibleWidget
 {
 public:
@@ -246,7 +246,7 @@ public:
 protected:
     QMdiSubWindow *mdiSubWindow() const;
 };
-#endif // QT_NO_MDIAREA
+#endif // QT_CONFIG(mdiarea)
 
 #if QT_CONFIG(dialogbuttonbox)
 class QAccessibleDialogButtonBox : public QAccessibleWidget
@@ -304,7 +304,7 @@ protected:
 
 #endif // QT_CONFIG(dockwidget)
 
-#ifndef QT_NO_MAINWINDOW
+#if QT_CONFIG(mainwindow)
 class QAccessibleMainWindow : public QAccessibleWidget
 {
 public:
@@ -317,7 +317,7 @@ public:
     QMainWindow *mainWindow() const;
 
 };
-#endif //QT_NO_MAINWINDOW
+#endif // QT_CONFIG(mainwindow)
 
 #endif // QT_NO_ACCESSIBILITY
 

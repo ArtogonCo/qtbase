@@ -52,12 +52,16 @@
 #endif
 #include "qdebug.h"
 #include <QApplication>
+#if QT_CONFIG(stackedwidget)
 #include <QStackedWidget>
+#endif
 #if QT_CONFIG(toolbox)
 #include <QToolBox>
 #endif
+#if QT_CONFIG(mdiarea)
 #include <QMdiArea>
 #include <QMdiSubWindow>
+#endif
 #if QT_CONFIG(dialogbuttonbox)
 #include <QDialogButtonBox>
 #endif
@@ -78,7 +82,9 @@
 #include <QDockWidget>
 #include <private/qdockwidget_p.h>
 #endif
+#if QT_CONFIG(mainwindow)
 #include <QMainWindow>
+#endif
 #include <QFocusFrame>
 
 #ifndef QT_NO_ACCESSIBILITY
@@ -310,7 +316,7 @@ void QAccessibleTextEdit::scrollToSubstring(int startIndex, int endIndex)
 
 #endif // QT_NO_TEXTEDIT && QT_NO_CURSOR
 
-#ifndef QT_NO_STACKEDWIDGET
+#if QT_CONFIG(stackedwidget)
 // ======================= QAccessibleStackedWidget ======================
 QAccessibleStackedWidget::QAccessibleStackedWidget(QWidget *widget)
     : QAccessibleWidget(widget, QAccessible::LayeredPane)
@@ -356,7 +362,7 @@ QStackedWidget *QAccessibleStackedWidget::stackedWidget() const
 {
     return static_cast<QStackedWidget *>(object());
 }
-#endif // QT_NO_STACKEDWIDGET
+#endif // QT_CONFIG(stackedwidget)
 
 #if QT_CONFIG(toolbox)
 // ======================= QAccessibleToolBox ======================
@@ -373,7 +379,7 @@ QToolBox * QAccessibleToolBox::toolBox() const
 #endif // QT_CONFIG(toolbox)
 
 // ======================= QAccessibleMdiArea ======================
-#ifndef QT_NO_MDIAREA
+#if QT_CONFIG(mdiarea)
 QAccessibleMdiArea::QAccessibleMdiArea(QWidget *widget)
     : QAccessibleWidget(widget, QAccessible::LayeredPane)
 {
@@ -493,7 +499,7 @@ QMdiSubWindow *QAccessibleMdiSubWindow::mdiSubWindow() const
 {
     return static_cast<QMdiSubWindow *>(object());
 }
-#endif // QT_NO_MDIAREA
+#endif // QT_CONFIG(mdiarea)
 
 #if QT_CONFIG(dialogbuttonbox)
 // ======================= QAccessibleDialogButtonBox ======================
@@ -1088,7 +1094,7 @@ void QAccessibleTextWidget::replaceText(int startOffset, int endOffset, const QS
 #endif // QT_NO_CURSOR
 
 
-#ifndef QT_NO_MAINWINDOW
+#if QT_CONFIG(mainwindow)
 QAccessibleMainWindow::QAccessibleMainWindow(QWidget *widget)
     : QAccessibleWidget(widget, QAccessible::Window) { }
 
@@ -1137,7 +1143,7 @@ QMainWindow *QAccessibleMainWindow::mainWindow() const
     return qobject_cast<QMainWindow *>(object());
 }
 
-#endif //QT_NO_MAINWINDOW
+#endif // QT_CONFIG(mainwindow)
 
 QT_END_NAMESPACE
 

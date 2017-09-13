@@ -143,8 +143,6 @@
 
 #include "qcompleter_p.h"
 
-#ifndef QT_NO_COMPLETER
-
 #include "QtWidgets/qscrollbar.h"
 #include "QtCore/qstringlistmodel.h"
 #if QT_CONFIG(dirmodel)
@@ -160,7 +158,9 @@
 #include "QtWidgets/qapplication.h"
 #include "QtGui/qevent.h"
 #include "QtWidgets/qdesktopwidget.h"
+#if QT_CONFIG(lineedit)
 #include "QtWidgets/qlineedit.h"
+#endif
 
 QT_BEGIN_NAMESPACE
 
@@ -1013,11 +1013,15 @@ QCompleter::~QCompleter()
 void QCompleter::setWidget(QWidget *widget)
 {
     Q_D(QCompleter);
+    if (widget == d->widget)
+        return;
+
     if (d->widget)
         d->widget->removeEventFilter(this);
     d->widget = widget;
     if (d->widget)
         d->widget->installEventFilter(this);
+
     if (d->popup) {
         d->popup->hide();
         d->popup->setFocusProxy(d->widget);
@@ -1898,5 +1902,3 @@ QT_END_NAMESPACE
 #include "moc_qcompleter.cpp"
 
 #include "moc_qcompleter_p.cpp"
-
-#endif // QT_NO_COMPLETER

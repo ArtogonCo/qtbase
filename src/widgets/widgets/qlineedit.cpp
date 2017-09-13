@@ -40,7 +40,6 @@
 #include "qlineedit.h"
 #include "qlineedit_p.h"
 
-#ifndef QT_NO_LINEEDIT
 #include "qaction.h"
 #include "qapplication.h"
 #include "qclipboard.h"
@@ -615,7 +614,7 @@ void QLineEdit::setValidator(const QValidator *v)
 }
 #endif // QT_NO_VALIDATOR
 
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
 /*!
     \since 4.2
 
@@ -667,7 +666,7 @@ QCompleter *QLineEdit::completer() const
     return d->control->completer();
 }
 
-#endif // QT_NO_COMPLETER
+#endif // QT_CONFIG(completer)
 
 /*!
     Returns a recommended size for the widget.
@@ -1742,7 +1741,7 @@ void QLineEdit::inputMethodEvent(QInputMethodEvent *e)
 
     d->control->processInputMethodEvent(e);
 
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
     if (!e->commitString().isEmpty())
         d->control->complete(Qt::Key_unknown);
 #endif
@@ -1823,7 +1822,7 @@ void QLineEdit::focusInEvent(QFocusEvent *e)
         d->control->setCancelText(d->control->text());
     }
 #endif
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
     if (d->control->completer()) {
         d->control->completer()->setWidget(this);
         QObject::connect(d->control->completer(), SIGNAL(activated(QString)),
@@ -1870,7 +1869,7 @@ void QLineEdit::focusOutEvent(QFocusEvent *e)
 #ifdef QT_KEYPAD_NAVIGATION
     d->control->setCancelText(QString());
 #endif
-#ifndef QT_NO_COMPLETER
+#if QT_CONFIG(completer)
     if (d->control->completer()) {
         QObject::disconnect(d->control->completer(), 0, this, 0);
     }
@@ -2217,5 +2216,3 @@ void QLineEdit::changeEvent(QEvent *ev)
 QT_END_NAMESPACE
 
 #include "moc_qlineedit.cpp"
-
-#endif // QT_NO_LINEEDIT

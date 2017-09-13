@@ -46,10 +46,14 @@
 #include <qdebug.h>
 #include <qapplication.h>
 #include <qmenu.h>
+#if QT_CONFIG(menubar)
 #include <qmenubar.h>
+#endif
 #include <qpainter.h>
 #include <qstyleoption.h>
+#if QT_CONFIG(lineedit)
 #include <qlineedit.h>
+#endif
 #include <private/qwindowsstyle_p.h>
 #if QT_CONFIG(combobox)
 #include <qcombobox.h>
@@ -83,16 +87,22 @@
 #include <qtabbar.h>
 #endif
 #include <QMetaProperty>
+#if QT_CONFIG(mainwindow)
 #include <qmainwindow.h>
+#endif
 #if QT_CONFIG(dockwidget)
 #include <qdockwidget.h>
 #endif
+#if QT_CONFIG(mdiarea)
 #include <qmdisubwindow.h>
+#endif
 #if QT_CONFIG(dialog)
 #include <qdialog.h>
 #endif
 #include <private/qwidget_p.h>
+#if QT_CONFIG(spinbox)
 #include <QAbstractSpinBox>
+#endif
 #if QT_CONFIG(label)
 #include <QLabel>
 #endif
@@ -1645,7 +1655,7 @@ int QStyleSheetStyle::nativeFrameWidth(const QWidget *w)
 {
     QStyle *base = baseStyle();
 
-#ifndef QT_NO_SPINBOX
+#if QT_CONFIG(spinbox)
     if (qobject_cast<const QAbstractSpinBox *>(w))
         return base->pixelMetric(QStyle::PM_SpinBoxFrameWidth, 0, w);
 #endif
@@ -1660,7 +1670,7 @@ int QStyleSheetStyle::nativeFrameWidth(const QWidget *w)
         return base->pixelMetric(QStyle::PM_MenuPanelWidth, 0, w);
 #endif
 
-#ifndef QT_NO_MENUBAR
+#if QT_CONFIG(menubar)
     if (qobject_cast<const QMenuBar *>(w))
         return base->pixelMetric(QStyle::PM_MenuBarPanelWidth, 0, w);
 #endif
@@ -1803,7 +1813,7 @@ QRenderRule QStyleSheetStyle::renderRule(const QObject *obj, const QStyleOption 
         case PseudoElement_SpinBoxDownButton:
         case PseudoElement_SpinBoxUpArrow:
         case PseudoElement_SpinBoxDownArrow:
-#ifndef QT_NO_SPINBOX
+#if QT_CONFIG(spinbox)
             if (const QStyleOptionSpinBox *sb = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
                 bool on = false;
                 bool up = pseudoElement == PseudoElement_SpinBoxUpButton
@@ -1814,7 +1824,7 @@ QRenderRule QStyleSheetStyle::renderRule(const QObject *obj, const QStyleOption 
                     on = true;
                 state |= (on ? QStyle::State_On : QStyle::State_Off);
             }
-#endif // QT_NO_SPINBOX
+#endif // QT_CONFIG(spinbox)
             break;
         case PseudoElement_GroupBoxTitle:
             state |= (complex->state & (QStyle::State_MouseOver | QStyle::State_Sunken));
@@ -1849,11 +1859,11 @@ QRenderRule QStyleSheetStyle::renderRule(const QObject *obj, const QStyleOption 
                 extraClass |= PseudoClass_ReadOnly;
             else
                 extraClass |= PseudoClass_Editable;
-#ifndef QT_NO_SPINBOX
+#if QT_CONFIG(spinbox)
         } else if (const QStyleOptionSpinBox *spin = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
             if (!spin->frame)
                 extraClass |= PseudoClass_Frameless;
-#endif // QT_NO_SPINBOX
+#endif // QT_CONFIG(spinbox)
         } else if (const QStyleOptionGroupBox *gb = qstyleoption_cast<const QStyleOptionGroupBox *>(opt)) {
             if (gb->features & QStyleOptionFrame::Flat)
                 extraClass |= PseudoClass_Flat;
@@ -2032,7 +2042,7 @@ QRenderRule QStyleSheetStyle::renderRule(const QObject *obj, const QStyleOption 
 
         }
 #endif
-#ifndef QT_NO_LINEEDIT
+#if QT_CONFIG(lineedit)
         // LineEdit sets Sunken flag to indicate Sunken frame (argh)
         if (const QLineEdit *lineEdit = qobject_cast<const QLineEdit *>(obj)) {
             state &= ~QStyle::State_Sunken;
@@ -2358,12 +2368,12 @@ static QWidget *embeddedWidget(QWidget *w)
     }
 #endif
 
-#ifndef QT_NO_SPINBOX
+#if QT_CONFIG(spinbox)
     if (QAbstractSpinBox *sb = qobject_cast<QAbstractSpinBox *>(w))
         return sb->findChild<QLineEdit *>();
 #endif
 
-#ifndef QT_NO_SCROLLAREA
+#if QT_CONFIG(scrollarea)
     if (QAbstractScrollArea *sa = qobject_cast<QAbstractScrollArea *>(w))
         return sa->viewport();
 #endif
@@ -2380,21 +2390,21 @@ static QWidget *embeddedWidget(QWidget *w)
 */
 static QWidget *containerWidget(const QWidget *w)
 {
-#ifndef QT_NO_LINEEDIT
+#if QT_CONFIG(lineedit)
     if (qobject_cast<const QLineEdit *>(w)) {
         //if the QLineEdit is an embeddedWidget, we need the rule of the real widget
 #if QT_CONFIG(combobox)
         if (qobject_cast<const QComboBox *>(w->parentWidget()))
             return w->parentWidget();
 #endif
-#ifndef QT_NO_SPINBOX
+#if QT_CONFIG(spinbox)
         if (qobject_cast<const QAbstractSpinBox *>(w->parentWidget()))
             return w->parentWidget();
 #endif
     }
-#endif // QT_NO_LINEEDIT
+#endif // QT_CONFIG(lineedit)
 
-#ifndef QT_NO_SCROLLAREA
+#if QT_CONFIG(scrollarea)
     if (const QAbstractScrollArea *sa = qobject_cast<const QAbstractScrollArea *>(w->parentWidget())) {
         if (sa->viewport() == w)
             return w->parentWidget();
@@ -2453,7 +2463,7 @@ static quint64 extendedPseudoClass(const QWidget *w)
         pc |= (combo->isEditable() ? PseudoClass_Editable : PseudoClass_ReadOnly);
     } else
 #endif
-#ifndef QT_NO_LINEEDIT
+#if QT_CONFIG(lineedit)
     if (const QLineEdit *edit = qobject_cast<const QLineEdit *>(w)) {
         pc |= (edit->isReadOnly() ? PseudoClass_ReadOnly : PseudoClass_Editable);
     } else
@@ -2798,7 +2808,7 @@ void QStyleSheetStyle::polish(QWidget *w)
     }
 
 
-#ifndef QT_NO_SCROLLAREA
+#if QT_CONFIG(scrollarea)
     if (QAbstractScrollArea *sa = qobject_cast<QAbstractScrollArea *>(w)) {
         QRenderRule rule = renderRule(sa, PseudoElement_None, PseudoClass_Enabled);
         if ((rule.hasBorder() && rule.border()->hasBorderImage())
@@ -2823,13 +2833,13 @@ void QStyleSheetStyle::polish(QWidget *w)
 #ifndef QT_NO_FRAME
               || qobject_cast<QFrame *>(w)
 #endif
-#ifndef QT_NO_MAINWINDOW
+#if QT_CONFIG(mainwindow)
               || qobject_cast<QMainWindow *>(w)
 #endif
-#ifndef QT_NO_MDIAREA
+#if QT_CONFIG(mdiarea)
               || qobject_cast<QMdiSubWindow *>(w)
 #endif
-#ifndef QT_NO_MENUBAR
+#if QT_CONFIG(menubar)
               || qobject_cast<QMenuBar *>(w)
 #endif
 #if QT_CONFIG(dialog)
@@ -2900,7 +2910,7 @@ void QStyleSheetStyle::unpolish(QWidget *w)
     w->setProperty("_q_stylesheet_maxh", QVariant());
     w->setAttribute(Qt::WA_StyleSheet, false);
     QObject::disconnect(w, 0, this, 0);
-#ifndef QT_NO_SCROLLAREA
+#if QT_CONFIG(scrollarea)
     if (QAbstractScrollArea *sa = qobject_cast<QAbstractScrollArea *>(w)) {
         QObject::disconnect(sa->horizontalScrollBar(), SIGNAL(valueChanged(int)),
                             sa, SLOT(update()));
@@ -2979,7 +2989,7 @@ void QStyleSheetStyle::drawComplexControl(ComplexControl cc, const QStyleOptionC
         }
         break;
 
-#ifndef QT_NO_SPINBOX
+#if QT_CONFIG(spinbox)
     case CC_SpinBox:
         if (const QStyleOptionSpinBox *spin = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
             QStyleOptionSpinBox spinOpt(*spin);
@@ -3042,7 +3052,7 @@ void QStyleSheetStyle::drawComplexControl(ComplexControl cc, const QStyleOptionC
             return;
         }
         break;
-#endif // QT_NO_SPINBOX
+#endif // QT_CONFIG(spinbox)
 
     case CC_GroupBox:
         if (const QStyleOptionGroupBox *gb = qstyleoption_cast<const QStyleOptionGroupBox *>(opt)) {
@@ -3219,7 +3229,7 @@ void QStyleSheetStyle::drawComplexControl(ComplexControl cc, const QStyleOptionC
         break;
 #endif // QT_CONFIG(scrollbar)
 
-#ifndef QT_NO_SLIDER
+#if QT_CONFIG(slider)
     case CC_Slider:
         if (const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(opt)) {
             rule.drawRule(p, opt->rect);
@@ -3273,7 +3283,7 @@ void QStyleSheetStyle::drawComplexControl(ComplexControl cc, const QStyleOptionC
             return;
         }
         break;
-#endif // QT_NO_SLIDER
+#endif // QT_CONFIG(slider)
 
     case CC_MdiControls:
         if (hasStyleRule(w, PseudoElement_MdiCloseButton)
@@ -4335,7 +4345,7 @@ void QStyleSheetStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *op
 
     case PE_PanelLineEdit:
         if (const QStyleOptionFrame *frm = qstyleoption_cast<const QStyleOptionFrame *>(opt)) {
-#ifndef QT_NO_SPINBOX
+#if QT_CONFIG(spinbox)
             if (w && qobject_cast<const QAbstractSpinBox *>(w->parentWidget())) {
                 QRenderRule spinboxRule = renderRule(w->parentWidget(), opt);
                 if (!spinboxRule.hasNativeBorder() || !spinboxRule.baseStyleCanDraw())
@@ -4372,7 +4382,7 @@ void QStyleSheetStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *op
             }
             break;
         }
-#ifndef QT_NO_SCROLLAREA
+#if QT_CONFIG(scrollarea)
         if (const QAbstractScrollArea *sa = qobject_cast<const QAbstractScrollArea *>(w)) {
             const QAbstractScrollAreaPrivate *sap = sa->d_func();
             rule.drawBackground(p, opt->rect, sap->contentsOffset());
@@ -4988,7 +4998,7 @@ QSize QStyleSheetStyle::sizeFromContents(ContentsType ct, const QStyleOption *op
         break;
     case CT_GroupBox:
     case CT_LineEdit:
-#ifndef QT_NO_SPINBOX
+#if QT_CONFIG(spinbox)
         if (qobject_cast<QAbstractSpinBox *>(w ? w->parentWidget() : 0))
             return csz; // we only care about the size hint of the line edit
 #endif
@@ -5384,7 +5394,7 @@ QRect QStyleSheetStyle::subControlRect(ComplexControl cc, const QStyleOptionComp
         }
         break;
 
-#ifndef QT_NO_SPINBOX
+#if QT_CONFIG(spinbox)
     case CC_SpinBox:
         if (const QStyleOptionSpinBox *spin = qstyleoption_cast<const QStyleOptionSpinBox *>(opt)) {
             QRenderRule upRule = renderRule(w, opt, PseudoElement_SpinBoxUpButton);
@@ -5443,7 +5453,7 @@ QRect QStyleSheetStyle::subControlRect(ComplexControl cc, const QStyleOptionComp
                                            : QWindowsStyle::subControlRect(cc, &spinBox, sc, w);
         }
         break;
-#endif // QT_NO_SPINBOX
+#endif // QT_CONFIG(spinbox)
 
     case CC_GroupBox:
         if (const QStyleOptionGroupBox *gb = qstyleoption_cast<const QStyleOptionGroupBox *>(opt)) {
@@ -5613,7 +5623,7 @@ QRect QStyleSheetStyle::subControlRect(ComplexControl cc, const QStyleOptionComp
         break;
 #endif // QT_CONFIG(scrollbar)
 
-#ifndef QT_NO_SLIDER
+#if QT_CONFIG(slider)
     case CC_Slider:
         if (const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(opt)) {
             QRenderRule subRule = renderRule(w, opt, PseudoElement_SliderGroove);
@@ -5646,7 +5656,7 @@ QRect QStyleSheetStyle::subControlRect(ComplexControl cc, const QStyleOptionComp
             }
         }
         break;
-#endif // QT_NO_SLIDER
+#endif // QT_CONFIG(slider)
 
     case CC_MdiControls:
         if (hasStyleRule(w, PseudoElement_MdiCloseButton)
