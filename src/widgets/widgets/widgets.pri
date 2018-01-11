@@ -3,10 +3,6 @@
 HEADERS += \
         widgets/qframe.h \
         widgets/qframe_p.h \
-        widgets/qmenu.h \
-        widgets/qmenu_p.h \
-        widgets/qtextedit.h \
-        widgets/qtextedit_p.h \
         widgets/qtoolbar.h \
         widgets/qtoolbar_p.h \
         widgets/qtoolbarlayout_p.h \
@@ -15,22 +11,17 @@ HEADERS += \
         widgets/qabstractscrollarea_p.h \
         widgets/qfocusframe.h \
         widgets/qwidgetanimator_p.h \
-        widgets/qtoolbararealayout_p.h \
-        widgets/qplaintextedit.h \
-        widgets/qplaintextedit_p.h
+        widgets/qtoolbararealayout_p.h
 
 SOURCES += \
         widgets/qframe.cpp \
-        widgets/qmenu.cpp \
-        widgets/qtextedit.cpp \
         widgets/qtoolbar.cpp \
         widgets/qtoolbarlayout.cpp \
         widgets/qtoolbarseparator.cpp \
         widgets/qabstractscrollarea.cpp \
         widgets/qfocusframe.cpp \
         widgets/qwidgetanimator.cpp \
-        widgets/qtoolbararealayout.cpp \
-        widgets/qplaintextedit.cpp
+        widgets/qtoolbararealayout.cpp
 
 qtConfig(abstractbutton) {
     HEADERS += \
@@ -186,6 +177,14 @@ qtConfig(mdiarea) {
         widgets/qmdisubwindow.cpp
 }
 
+qtConfig(menu) {
+    HEADERS += \
+        widgets/qmenu.h \
+        widgets/qmenu_p.h
+
+    SOURCES += widgets/qmenu.cpp
+}
+
 qtConfig(menubar) {
     HEADERS += \
         widgets/qmenubar.h \
@@ -305,6 +304,18 @@ qtConfig(tabbar) {
     SOURCES += widgets/qtabbar.cpp
 }
 
+qtConfig(textedit) {
+    HEADERS += \
+        widgets/qplaintextedit.h \
+        widgets/qplaintextedit_p.h \
+        widgets/qtextedit.h \
+        widgets/qtextedit_p.h
+
+    SOURCES += \
+        widgets/qplaintextedit.cpp \
+        widgets/qtextedit.cpp
+}
+
 qtConfig(textbrowser) {
     HEADERS += widgets/qtextbrowser.h
     SOURCES += widgets/qtextbrowser.cpp
@@ -345,7 +356,10 @@ macx {
         widgets/qmaccocoaviewcontainer_mac.h
 
     OBJECTIVE_SOURCES += \
-        widgets/qmenu_mac.mm \
         widgets/qmacnativewidget_mac.mm \
         widgets/qmaccocoaviewcontainer_mac.mm
+
+    qtConfig(menu)|qtConfig(menubar) {
+        SOURCES += widgets/qmenu_mac.mm
+    }
 }

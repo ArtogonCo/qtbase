@@ -237,9 +237,6 @@ void QTreeView::setModel(QAbstractItemModel *model)
     // QAbstractItemView connects to a private slot
     disconnect(d->model, SIGNAL(rowsRemoved(QModelIndex,int,int)),
                this, SLOT(_q_rowsRemoved(QModelIndex,int,int)));
-    // do header layout after the tree
-    disconnect(d->model, SIGNAL(layoutChanged()),
-               d->header, SLOT(_q_layoutChanged()));
     // QTreeView has a public slot for this
     connect(d->model, SIGNAL(rowsRemoved(QModelIndex,int,int)),
             this, SLOT(rowsRemoved(QModelIndex,int,int)));
@@ -736,7 +733,10 @@ void QTreeView::dataChanged(const QModelIndex &topLeft, const QModelIndex &botto
 void QTreeView::hideColumn(int column)
 {
     Q_D(QTreeView);
+    if (d->header->isSectionHidden(column))
+        return;
     d->header->hideSection(column);
+    doItemsLayout();
 }
 
 /*!
@@ -747,7 +747,10 @@ void QTreeView::hideColumn(int column)
 void QTreeView::showColumn(int column)
 {
     Q_D(QTreeView);
+    if (!d->header->isSectionHidden(column))
+        return;
     d->header->showSection(column);
+    doItemsLayout();
 }
 
 /*!
@@ -1008,11 +1011,16 @@ void QTreeView::keyboardSearch(const QString &search)
     if (!d->model->rowCount(d->root) || !d->model->columnCount(d->root))
         return;
 
+    // Do a relayout nows, so that we can utilize viewItems
+    d->executePostedLayout();
+    if (d->viewItems.isEmpty())
+        return;
+
     QModelIndex start;
     if (currentIndex().isValid())
         start = currentIndex();
     else
-        start = d->model->index(0, 0, d->root);
+        start = d->viewItems.at(0).index;
 
     bool skipRow = false;
     bool keyboardTimeWasValid = d->keyboardInputTime.isValid();
@@ -1040,13 +1048,16 @@ void QTreeView::keyboardSearch(const QString &search)
 
     // skip if we are searching for the same key or a new search started
     if (skipRow) {
-        if (indexBelow(start).isValid())
+        if (indexBelow(start).isValid()) {
             start = indexBelow(start);
-        else
-            start = d->model->index(0, start.column(), d->root);
+        } else {
+            const int origCol = start.column();
+            start = d->viewItems.at(0).index;
+            if (origCol != start.column())
+                start = start.sibling(start.row(), origCol);
+        }
     }
 
-    d->executePostedLayout();
     int startIndex = d->viewIndex(start);
     if (startIndex <= -1)
         return;
@@ -3503,7 +3514,7 @@ int QTreeViewPrivate::itemAtCoordinate(int coordinate) const
         const int contentsCoordinate = coordinate + vbar->value();
         for (int viewItemIndex = 0; viewItemIndex < viewItems.count(); ++viewItemIndex) {
             viewItemCoordinate += itemHeight(viewItemIndex);
-            if (viewItemCoordinate >= contentsCoordinate)
+            if (viewItemCoordinate > contentsCoordinate)
                 return (viewItemIndex >= itemCount ? -1 : viewItemIndex);
         }
     } else { // ScrollPerItem

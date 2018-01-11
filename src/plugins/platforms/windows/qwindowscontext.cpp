@@ -46,7 +46,9 @@
 #include "qtwindowsglobal.h"
 #include "qwindowsmime.h"
 #include "qwindowsinputcontext.h"
-#include "qwindowstabletsupport.h"
+#if QT_CONFIG(tabletevent)
+#  include "qwindowstabletsupport.h"
+#endif
 #include "qwindowstheme.h"
 #include <private/qguiapplication_p.h>
 #ifndef QT_NO_ACCESSIBILITY
@@ -1055,6 +1057,13 @@ bool QWindowsContext::windowsProc(HWND hwnd, UINT message,
             return d->m_mouseHandler.translateMouseEvent(platformWindow->window(), hwnd, et, msg, result);
 #endif
         break;
+    case QtWindows::EnterSizeMoveEvent:
+        platformWindow->setFlag(QWindowsWindow::ResizeMoveActive);
+        return true;
+    case QtWindows::ExitSizeMoveEvent:
+        platformWindow->clearFlag(QWindowsWindow::ResizeMoveActive);
+        platformWindow->checkForScreenChanged();
+        return true;
     case QtWindows::ScrollEvent:
 #if QT_CONFIG(sessionmanager)
         return platformSessionManager()->isInteractionBlocked() ? true : d->m_mouseHandler.translateScrollEvent(platformWindow->window(), hwnd, msg, result);

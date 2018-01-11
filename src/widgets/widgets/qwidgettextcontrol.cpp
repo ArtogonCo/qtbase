@@ -48,12 +48,16 @@
 #include <qdebug.h>
 #include <qdrag.h>
 #include <qclipboard.h>
+#if QT_CONFIG(menu)
 #include <qmenu.h>
+#endif
 #include <qstyle.h>
 #include <qtimer.h>
 #include "private/qtextdocumentlayout_p.h"
 #include "private/qabstracttextdocumentlayout_p.h"
+#if QT_CONFIG(textedit)
 #include "private/qtextedit_p.h"
+#endif
 #include "qtextdocument.h"
 #include "private/qtextdocument_p.h"
 #include "qtextlist.h"
@@ -1349,7 +1353,7 @@ process:
 
 QVariant QWidgetTextControl::loadResource(int type, const QUrl &name)
 {
-#ifdef QT_NO_TEXTEDIT
+#if !QT_CONFIG(textedit)
     Q_UNUSED(type);
     Q_UNUSED(name);
 #else
@@ -2410,7 +2414,7 @@ void QWidgetTextControl::setAcceptRichText(bool accept)
     d->acceptRichText = accept;
 }
 
-#ifndef QT_NO_TEXTEDIT
+#if QT_CONFIG(textedit)
 
 void QWidgetTextControl::setExtraSelections(const QList<QTextEdit::ExtraSelection> &selections)
 {
@@ -2474,7 +2478,7 @@ QList<QTextEdit::ExtraSelection> QWidgetTextControl::extraSelections() const
     return selections;
 }
 
-#endif // QT_NO_TEXTEDIT
+#endif // QT_CONFIG(textedit)
 
 void QWidgetTextControl::setTextWidth(qreal width)
 {
@@ -3295,7 +3299,7 @@ void QUnicodeControlCharacterMenu::menuActionTriggered()
     QChar c(qt_controlCharacters[idx].character);
     QString str(c);
 
-#ifndef QT_NO_TEXTEDIT
+#if QT_CONFIG(textedit)
     if (QTextEdit *edit = qobject_cast<QTextEdit *>(editWidget)) {
         edit->insertPlainText(str);
         return;

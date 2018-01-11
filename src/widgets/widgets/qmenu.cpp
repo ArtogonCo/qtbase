@@ -39,8 +39,6 @@
 
 #include "qmenu.h"
 
-#ifndef QT_NO_MENU
-
 #include <QtWidgets/private/qtwidgetsglobal_p.h>
 
 #include "qdebug.h"
@@ -855,8 +853,7 @@ void QMenuPrivate::adjustMenuScreen(const QPoint &p)
     // The windowHandle must point to the screen where the menu will be shown.
     // The (item) size calculations depend on the menu screen,
     // so a wrong screen would often cause wrong sizes (on high DPI)
-    const QScreen *primaryScreen = QApplication::primaryScreen();
-    const QScreen *currentScreen = q->windowHandle() ? q->windowHandle()->screen() : primaryScreen;
+    const QScreen *currentScreen = q->windowHandle() ? q->windowHandle()->screen() : nullptr;
     const int screenNumberForPoint = QApplication::desktop()->screenNumber(p);
     QScreen *actualScreen = QGuiApplication::screens().at(screenNumberForPoint);
     if (actualScreen && currentScreen != actualScreen) {
@@ -3778,5 +3775,3 @@ QT_END_NAMESPACE
 // for private slots
 #include "moc_qmenu.cpp"
 #include "qmenu.moc"
-
-#endif // QT_NO_MENU

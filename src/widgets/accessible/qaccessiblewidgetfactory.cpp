@@ -142,7 +142,7 @@ QAccessibleInterface *qAccessibleFactory(const QString &classname, QObject *obje
     } else if (classname == QLatin1String("QMenuBar")) {
         iface = new QAccessibleMenuBar(widget);
 #endif
-#ifndef QT_NO_MENU
+#if QT_CONFIG(menu)
     } else if (classname == QLatin1String("QMenu")) {
         iface = new QAccessibleMenu(widget);
 #endif
@@ -167,7 +167,7 @@ QAccessibleInterface *qAccessibleFactory(const QString &classname, QObject *obje
     } else if (classname == QLatin1String("QSplitterHandle")) {
         iface = new QAccessibleWidget(widget, QAccessible::Grip);
 #endif
-#if !defined(QT_NO_TEXTEDIT) && !defined(QT_NO_CURSOR)
+#if QT_CONFIG(textedit) && !defined(QT_NO_CURSOR)
     } else if (classname == QLatin1String("QTextEdit")) {
         iface = new QAccessibleTextEdit(widget);
     } else if (classname == QLatin1String("QPlainTextEdit")) {

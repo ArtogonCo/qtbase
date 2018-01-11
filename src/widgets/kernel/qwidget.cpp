@@ -45,7 +45,9 @@
 #include "qdesktopwidget_p.h"
 #include "qevent.h"
 #include "qlayout.h"
+#if QT_CONFIG(menu)
 #include "qmenu.h"
+#endif
 #include "qmetaobject.h"
 #include "qpixmap.h"
 #include "qpointer.h"
@@ -125,15 +127,6 @@
 
 QT_BEGIN_NAMESPACE
 
-static bool qt_enable_backingstore = true;
-#if 0 // Used to be included in Qt4 for Q_WS_X11
-// for compatibility with Qt 4.0
-Q_WIDGETS_EXPORT void qt_x11_set_global_double_buffer(bool enable)
-{
-    qt_enable_backingstore = enable;
-}
-#endif
-
 #if 0 // Used to be included in Qt4 for Q_WS_MAC
 bool qt_mac_clearDirtyOnWidgetInsideDrawWidget = false;
 #endif
@@ -142,11 +135,6 @@ static inline bool qRectIntersects(const QRect &r1, const QRect &r2)
 {
     return (qMax(r1.left(), r2.left()) <= qMin(r1.right(), r2.right()) &&
             qMax(r1.top(), r2.top()) <= qMin(r1.bottom(), r2.bottom()));
-}
-
-static inline bool hasBackingStoreSupport()
-{
-    return true;
 }
 
 #if 0 // Used to be included in Qt4 for Q_WS_MAC
@@ -1196,6 +1184,7 @@ void QWidgetPrivate::init(QWidget *parentWidget, Qt::WindowFlags f)
     q->setAttribute(Qt::WA_QuitOnClose); // might be cleared in adjustQuitOnCloseAttribute()
     adjustQuitOnCloseAttribute();
 
+    q->setAttribute(Qt::WA_ContentsMarginsRespectsSafeArea);
     q->setAttribute(Qt::WA_WState_Hidden);
 
     //give potential windows a bigger "pre-initial" size; create_sys() will give them a new size later
@@ -1348,8 +1337,7 @@ void QWidget::create(WId window, bool initializeWindow, bool destroyOldWindow)
     // a real toplevel window needs a backing store
     if (isWindow() && windowType() != Qt::Desktop) {
         d->topData()->backingStoreTracker.destroy();
-        if (hasBackingStoreSupport())
-            d->topData()->backingStoreTracker.create(this);
+        d->topData()->backingStoreTracker.create(this);
     }
 
     d->setModal_sys();
@@ -1370,6 +1358,8 @@ void QWidget::create(WId window, bool initializeWindow, bool destroyOldWindow)
         d->setWindowIconText_helper(d->topData()->iconText);
     if (isWindow() && !d->topData()->caption.isEmpty())
         d->setWindowTitle_helper(d->topData()->caption);
+    if (isWindow() && !d->topData()->filePath.isEmpty())
+        d->setWindowFilePath_helper(d->topData()->filePath);
     if (windowType() != Qt::Desktop) {
         d->updateSystemBackground();
 
@@ -1419,8 +1409,6 @@ void QWidgetPrivate::create_sys(WId window, bool initializeWindow, bool destroyO
     Q_UNUSED(initializeWindow);
     Q_UNUSED(destroyOldWindow);
 
-    Qt::WindowFlags flags = data.window_flags;
-
     if (!q->testAttribute(Qt::WA_NativeWindow) && !q->isWindow())
         return; // we only care about real toplevels
 
@@ -1438,12 +1426,19 @@ void QWidgetPrivate::create_sys(WId window, bool initializeWindow, bool destroyO
             win->setProperty(propertyName, q->property(propertyName));
     }
 
+    Qt::WindowFlags &flags = data.window_flags;
+
+#if defined(Q_OS_IOS) || defined(Q_OS_TVOS)
+    if (q->testAttribute(Qt::WA_ContentsMarginsRespectsSafeArea))
+        flags |= Qt::MaximizeUsingFullscreenGeometryHint;
+#endif
+
     if (q->testAttribute(Qt::WA_ShowWithoutActivating))
         win->setProperty("_q_showWithoutActivating", QVariant(true));
     if (q->testAttribute(Qt::WA_MacAlwaysShowToolWindow))
         win->setProperty("_q_macAlwaysShowToolWindow", QVariant::fromValue(QVariant(true)));
     setNetWmWindowTypes(true); // do nothing if none of WA_X11NetWmWindowType* is set
-    win->setFlags(data.window_flags);
+    win->setFlags(flags);
     fixPosIncludesFrame();
     if (q->testAttribute(Qt::WA_Moved)
         || !QGuiApplicationPrivate::platformIntegration()->hasCapability(QPlatformIntegration::WindowManagement))
@@ -2329,7 +2324,7 @@ bool QWidgetPrivate::paintOnScreen() const
         return true;
     }
 
-    return !qt_enable_backingstore;
+    return false;
 #endif
 }
 
@@ -5524,11 +5519,11 @@ void QWidgetPrivate::drawWidget(QPaintDevice *pdev, const QRegion &rgn, const QP
                 setSystemClip(pdev, rgn.translated(offset));
                 QPainter p(pdev);
                 p.translate(offset);
-                context.painter = &p;
+                context.painter = context.sharedPainter = &p;
                 graphicsEffect->draw(&p);
                 setSystemClip(pdev, QRegion());
             } else {
-                context.painter = sharedPainter;
+                context.painter = context.sharedPainter = sharedPainter;
                 if (sharedPainter->worldTransform() != sourced->lastEffectTransform) {
                     sourced->invalidateCache();
                     sourced->lastEffectTransform = sharedPainter->worldTransform();
@@ -5922,7 +5917,7 @@ QPixmap QWidgetEffectSourcePrivate::pixmap(Qt::CoordinateSystem system, QPoint *
 
     pixmapOffset -= effectRect.topLeft();
 
-    const qreal dpr = context->painter->device()->devicePixelRatio();
+    const qreal dpr = context->painter->device()->devicePixelRatioF();
     QPixmap pixmap(effectRect.size() * dpr);
     pixmap.setDevicePixelRatio(dpr);
 
@@ -6012,9 +6007,9 @@ void QWidgetPrivate::resolveLocale()
     Q_Q(const QWidget);
 
     if (!q->testAttribute(Qt::WA_SetLocale)) {
-        setLocale_helper(q->isWindow() && !q->testAttribute(Qt::WA_WindowPropagation)
-                            ? QLocale()
-                            : q->parentWidget()->locale());
+        QWidget *parent = q->parentWidget();
+        setLocale_helper(!parent || (q->isWindow() && !q->testAttribute(Qt::WA_WindowPropagation))
+                         ? QLocale() : parent->locale());
     }
 }
 
@@ -7584,21 +7579,7 @@ void QWidget::setContentsMargins(int left, int top, int right, int bottom)
     d->rightmargin = right;
     d->bottommargin = bottom;
 
-    if (QLayout *l=d->layout)
-        l->update(); //force activate; will do updateGeometry
-    else
-        updateGeometry();
-
-    if (isVisible()) {
-        update();
-        QResizeEvent e(data->crect.size(), data->crect.size());
-        QApplication::sendEvent(this, &e);
-    } else {
-        setAttribute(Qt::WA_PendingResizeEvent, true);
-    }
-
-    QEvent e(QEvent::ContentsRectChange);
-    QApplication::sendEvent(this, &e);
+    d->updateContentsRect();
 }
 
 /*!
@@ -7623,6 +7604,27 @@ void QWidget::setContentsMargins(const QMargins &margins)
                        margins.right(), margins.bottom());
 }
 
+void QWidgetPrivate::updateContentsRect()
+{
+    Q_Q(QWidget);
+
+    if (layout)
+        layout->update(); //force activate; will do updateGeometry
+    else
+        q->updateGeometry();
+
+    if (q->isVisible()) {
+        q->update();
+        QResizeEvent e(q->data->crect.size(), q->data->crect.size());
+        QApplication::sendEvent(q, &e);
+    } else {
+        q->setAttribute(Qt::WA_PendingResizeEvent, true);
+    }
+
+    QEvent e(QEvent::ContentsRectChange);
+    QApplication::sendEvent(q, &e);
+}
+
 /*!
   Returns the widget's contents margins for \a left, \a top, \a
   right, and \a bottom.
@@ -7631,15 +7633,22 @@ void QWidget::setContentsMargins(const QMargins &margins)
  */
 void QWidget::getContentsMargins(int *left, int *top, int *right, int *bottom) const
 {
-    Q_D(const QWidget);
+    QMargins m = contentsMargins();
     if (left)
-        *left = d->leftmargin;
+        *left = m.left();
     if (top)
-        *top = d->topmargin;
+        *top = m.top();
     if (right)
-        *right = d->rightmargin;
+        *right = m.right();
     if (bottom)
-        *bottom = d->bottommargin;
+        *bottom = m.bottom();
+}
+
+// FIXME: Move to qmargins.h for next minor Qt release
+QMargins operator|(const QMargins &m1, const QMargins &m2)
+{
+    return QMargins(qMax(m1.left(), m2.left()), qMax(m1.top(), m2.top()),
+        qMax(m1.right(), m2.right()), qMax(m1.bottom(), m2.bottom()));
 }
 
 /*!
@@ -7652,9 +7661,10 @@ void QWidget::getContentsMargins(int *left, int *top, int *right, int *bottom) c
 QMargins QWidget::contentsMargins() const
 {
     Q_D(const QWidget);
-    return QMargins(d->leftmargin, d->topmargin, d->rightmargin, d->bottommargin);
+    QMargins userMargins(d->leftmargin, d->topmargin, d->rightmargin, d->bottommargin);
+    return testAttribute(Qt::WA_ContentsMarginsRespectsSafeArea) ?
+        userMargins | d->safeAreaMargins() : userMargins;
 }
-
 
 /*!
     Returns the area inside the widget's margins.
@@ -7663,14 +7673,87 @@ QMargins QWidget::contentsMargins() const
 */
 QRect QWidget::contentsRect() const
 {
-    Q_D(const QWidget);
-    return QRect(QPoint(d->leftmargin, d->topmargin),
-                 QPoint(data->crect.width() - 1 - d->rightmargin,
-                        data->crect.height() - 1 - d->bottommargin));
-
+    return rect() - contentsMargins();
 }
 
+QMargins QWidgetPrivate::safeAreaMargins() const
+{
+    Q_Q(const QWidget);
+    QWidget *nativeWidget = q->window();
+    if (!nativeWidget->windowHandle())
+        return QMargins();
 
+    QPlatformWindow *platformWindow = nativeWidget->windowHandle()->handle();
+    if (!platformWindow)
+        return QMargins();
+
+    QMargins safeAreaMargins = platformWindow->safeAreaMargins();
+
+    if (!q->isWindow()) {
+        // In theory the native parent widget already has a contents rect reflecting
+        // the safe area of that widget, but we can't be sure that the widget or child
+        // widgets of that widget have respected the contents rect when setting their
+        // geometry, so we need to manually compute the safe area.
+
+        // Unless the native widget doesn't have any margins, in which case there's
+        // nothing for us to compute.
+        if (safeAreaMargins.isNull())
+            return QMargins();
+
+        // Or, if one of our ancestors are in a layout that does not have WA_LayoutOnEntireRect
+        // set, then we know that the layout has already taken care of placing us inside the
+        // safe area, by taking the contents rect of its parent widget into account.
+        const QWidget *assumedSafeWidget = nullptr;
+        for (const QWidget *w = q; w != nativeWidget; w = w->parentWidget()) {
+            QWidget *parentWidget = w->parentWidget();
+            if (parentWidget->testAttribute(Qt::WA_LayoutOnEntireRect))
+                continue; // Layout not going to help us
+
+            QLayout *layout = parentWidget->layout();
+            if (!layout)
+                continue;
+
+            if (layout->geometry().isNull())
+                continue; // Layout hasn't been activated yet
+
+            if (layout->indexOf(const_cast<QWidget *>(w)) < 0)
+                continue; // Widget is not in layout
+
+            assumedSafeWidget = w;
+            break;
+        }
+
+#if !defined(QT_DEBUG)
+        if (assumedSafeWidget) {
+            // We found a layout that we assume will take care of keeping us within the safe area
+            // For debug builds we still map the safe area using the fallback logic, so that we
+            // can detect any misbehaving layouts.
+            return QMargins();
+        }
+#endif
+
+        // In all other cases we need to map the safe area of the native parent to the widget.
+        // This depends on the widget being positioned and sized already, which means the initial
+        // layout will be wrong, but the layout will then adjust itself.
+        QPoint topLeftMargins = q->mapFrom(nativeWidget, QPoint(safeAreaMargins.left(), safeAreaMargins.top()));
+        QRect widgetRect = q->isVisible() ? q->visibleRegion().boundingRect() : q->rect();
+        QPoint bottomRightMargins = widgetRect.bottomRight() - q->mapFrom(nativeWidget,
+            nativeWidget->rect().bottomRight() - QPoint(safeAreaMargins.right(), safeAreaMargins.bottom()));
+
+        // Margins should never be negative
+        safeAreaMargins = QMargins(qMax(0, topLeftMargins.x()), qMax(0, topLeftMargins.y()),
+            qMax(0, bottomRightMargins.x()), qMax(0, bottomRightMargins.y()));
+
+        if (!safeAreaMargins.isNull() && assumedSafeWidget) {
+            QLayout *layout = assumedSafeWidget->parentWidget()->layout();
+            qWarning() << layout << "is laying out" << assumedSafeWidget
+                << "outside of the contents rect of" << layout->parentWidget();
+            return QMargins(); // Return empty margin to visually highlight the error
+        }
+    }
+
+    return safeAreaMargins;
+}
 
 /*!
   \fn void QWidget::customContextMenuRequested(const QPoint &pos)
@@ -8996,7 +9079,7 @@ bool QWidget::event(QEvent *event)
         case Qt::CustomContextMenu:
             emit customContextMenuRequested(static_cast<QContextMenuEvent *>(event)->pos());
             break;
-#ifndef QT_NO_MENU
+#if QT_CONFIG(menu)
         case Qt::ActionsContextMenu:
             if (d->actions.count()) {
                 QMenu::exec(d->actions, static_cast<QContextMenuEvent *>(event)->globalPos(),
@@ -10929,25 +11012,7 @@ void QWidget::repaint(int x, int y, int w, int h)
 void QWidget::repaint(const QRect &rect)
 {
     Q_D(QWidget);
-
-    if (testAttribute(Qt::WA_WState_ConfigPending)) {
-        update(rect);
-        return;
-    }
-
-    if (!isVisible() || !updatesEnabled() || rect.isEmpty())
-        return;
-
-    if (hasBackingStoreSupport()) {
-        QTLWExtra *tlwExtra = window()->d_func()->maybeTopData();
-        if (tlwExtra && !tlwExtra->inTopLevelResize && tlwExtra->backingStore) {
-            tlwExtra->inRepaint = true;
-            tlwExtra->backingStoreTracker->markDirty(rect, this, QWidgetBackingStore::UpdateNow);
-            tlwExtra->inRepaint = false;
-        }
-    } else {
-        d->repaint_sys(rect);
-    }
+    d->repaint(rect);
 }
 
 /*!
@@ -10958,24 +11023,22 @@ void QWidget::repaint(const QRect &rect)
 void QWidget::repaint(const QRegion &rgn)
 {
     Q_D(QWidget);
+    d->repaint(rgn);
+}
 
-    if (testAttribute(Qt::WA_WState_ConfigPending)) {
-        update(rgn);
+template <typename T>
+void QWidgetPrivate::repaint(T r)
+{
+    Q_Q(QWidget);
+
+    if (!q->isVisible() || !q->updatesEnabled() || r.isEmpty())
         return;
-    }
 
-    if (!isVisible() || !updatesEnabled() || rgn.isEmpty())
-        return;
-
-    if (hasBackingStoreSupport()) {
-        QTLWExtra *tlwExtra = window()->d_func()->maybeTopData();
-        if (tlwExtra && !tlwExtra->inTopLevelResize && tlwExtra->backingStore) {
-            tlwExtra->inRepaint = true;
-            tlwExtra->backingStoreTracker->markDirty(rgn, this, QWidgetBackingStore::UpdateNow);
-            tlwExtra->inRepaint = false;
-        }
-    } else {
-        d->repaint_sys(rgn);
+    QTLWExtra *tlwExtra = q->window()->d_func()->maybeTopData();
+    if (tlwExtra && !tlwExtra->inTopLevelResize && tlwExtra->backingStore) {
+        tlwExtra->inRepaint = true;
+        tlwExtra->backingStoreTracker->markDirty(r, q, QWidgetBackingStore::UpdateNow);
+        tlwExtra->inRepaint = false;
     }
 }
 
@@ -11016,26 +11079,8 @@ void QWidget::update()
 */
 void QWidget::update(const QRect &rect)
 {
-    if (!isVisible() || !updatesEnabled())
-        return;
-
-    QRect r = rect & QWidget::rect();
-
-    if (r.isEmpty())
-        return;
-
-    if (testAttribute(Qt::WA_WState_InPaintEvent)) {
-        QApplication::postEvent(this, new QUpdateLaterEvent(r));
-        return;
-    }
-
-    if (hasBackingStoreSupport()) {
-        QTLWExtra *tlwExtra = window()->d_func()->maybeTopData();
-        if (tlwExtra && !tlwExtra->inTopLevelResize && tlwExtra->backingStore)
-            tlwExtra->backingStoreTracker->markDirty(r, this);
-    } else {
-        d_func()->repaint_sys(r);
-    }
+    Q_D(QWidget);
+    d->update(rect);
 }
 
 /*!
@@ -11045,28 +11090,32 @@ void QWidget::update(const QRect &rect)
 */
 void QWidget::update(const QRegion &rgn)
 {
-    if (!isVisible() || !updatesEnabled())
-        return;
-
-    QRegion r = rgn & QWidget::rect();
-
-    if (r.isEmpty())
-        return;
-
-    if (testAttribute(Qt::WA_WState_InPaintEvent)) {
-        QApplication::postEvent(this, new QUpdateLaterEvent(r));
-        return;
-    }
-
-    if (hasBackingStoreSupport()) {
-        QTLWExtra *tlwExtra = window()->d_func()->maybeTopData();
-        if (tlwExtra && !tlwExtra->inTopLevelResize && tlwExtra->backingStore)
-            tlwExtra->backingStoreTracker->markDirty(r, this);
-    } else {
-        d_func()->repaint_sys(r);
-    }
+    Q_D(QWidget);
+    d->update(rgn);
 }
 
+template <typename T>
+void QWidgetPrivate::update(T r)
+{
+    Q_Q(QWidget);
+
+    if (!q->isVisible() || !q->updatesEnabled())
+        return;
+
+    T clipped = r & q->rect();
+
+    if (clipped.isEmpty())
+        return;
+
+    if (q->testAttribute(Qt::WA_WState_InPaintEvent)) {
+        QApplication::postEvent(q, new QUpdateLaterEvent(clipped));
+        return;
+    }
+
+    QTLWExtra *tlwExtra = q->window()->d_func()->maybeTopData();
+    if (tlwExtra && !tlwExtra->inTopLevelResize && tlwExtra->backingStore)
+        tlwExtra->backingStoreTracker->markDirty(clipped, q);
+}
 
  /*!
   \internal
