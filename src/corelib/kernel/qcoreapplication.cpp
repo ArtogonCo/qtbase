@@ -776,8 +776,6 @@ void QCoreApplicationPrivate::init()
     if (!coreappdata()->applicationVersionSet)
         coreappdata()->applicationVersion = appVersion();
 
-    QLoggingRegistry::instance()->init();
-
 #if QT_CONFIG(library)
     // Reset the lib paths, so that they will be recomputed, taking the availability of argv[0]
     // into account. If necessary, recompute right away and replay the manual changes on top of the
@@ -2151,11 +2149,11 @@ QString QCoreApplication::applicationFilePath()
     QCoreApplicationPrivate *d = self->d_func();
 
     if (d->argc) {
-        static const char *procName = d->argv[0];
-        if (qstrcmp(procName, d->argv[0]) != 0) {
+        static QByteArray procName = QByteArray(d->argv[0]);
+        if (procName != d->argv[0]) {
             // clear the cache if the procname changes, so we reprocess it.
             QCoreApplicationPrivate::clearApplicationFilePath();
-            procName = d->argv[0];
+            procName = QByteArray(d->argv[0]);
         }
     }
 
@@ -2836,6 +2834,10 @@ void QCoreApplication::setEventDispatcher(QAbstractEventDispatcher *eventDispatc
 
     If QCoreApplication is deleted and another QCoreApplication is created,
     the startup function will be invoked again.
+
+    \note This macro is not suitable for use in library code that is then
+    statically linked into an application since the function may not be called
+    at all due to being eliminated by the linker.
 */
 
 /*!

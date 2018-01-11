@@ -220,7 +220,7 @@ void QXcbConnection::xi2SetupDevices()
             isTablet = true;
             tabletData.pointerType = QTabletEvent::Eraser;
             dbgType = QLatin1String("eraser");
-        } else if (name.contains("cursor")) {
+        } else if (name.contains("cursor") && !(name.contains("cursor controls") && name.contains("trackball"))) {
             isTablet = true;
             tabletData.pointerType = QTabletEvent::Cursor;
             dbgType = QLatin1String("cursor");
@@ -700,8 +700,9 @@ void QXcbConnection::xi2ProcessTouch(void *xiDevEvent, QXcbWindow *platformWindo
         // Touches must be accepted when we are grabbing touch events. Otherwise the entire sequence
         // will get replayed when the grab ends.
         if (m_xiGrab) {
-            // XIAllowTouchEvents deadlocks with libXi < 1.7.4 (this has nothing to do with the XI2 versions like 2.2)
-            // http://lists.x.org/archives/xorg-devel/2014-July/043059.html
+            // Note that XIAllowTouchEvents is known to deadlock with older libXi versions,
+            // for details see qtbase/src/plugins/platforms/xcb/README. This has nothing to
+            // do with the XInput protocol version, but is a bug in libXi implementation instead.
             XIAllowTouchEvents(static_cast<Display *>(m_xlib_display), xiDeviceEvent->deviceid,
                                xiDeviceEvent->detail, xiDeviceEvent->event, XIAcceptTouch);
         }
@@ -952,10 +953,12 @@ void QXcbConnection::xi2HandleScrollEvent(void *event, ScrollingDevice &scrollin
                     double delta = scrollingDevice.lastScrollPosition.y() - value;
                     scrollingDevice.lastScrollPosition.setY(value);
                     angleDelta.setY((delta / scrollingDevice.verticalIncrement) * 120);
-                    // We do not set "pixel" delta if it is only measured in ticks.
-                    if (scrollingDevice.verticalIncrement > 1)
+                    // With most drivers the increment is 1 for wheels.
+                    // For libinput it is hardcoded to a useless 15.
+                    // For a proper touchpad driver it should be in the same order of magnitude as 120
+                    if (scrollingDevice.verticalIncrement > 15)
                         rawDelta.setY(delta);
-                    else if (scrollingDevice.verticalIncrement < -1)
+                    else if (scrollingDevice.verticalIncrement < -15)
                         rawDelta.setY(-delta);
                 }
             }
@@ -964,10 +967,10 @@ void QXcbConnection::xi2HandleScrollEvent(void *event, ScrollingDevice &scrollin
                     double delta = scrollingDevice.lastScrollPosition.x() - value;
                     scrollingDevice.lastScrollPosition.setX(value);
                     angleDelta.setX((delta / scrollingDevice.horizontalIncrement) * 120);
-                    // We do not set "pixel" delta if it is only measured in ticks.
-                    if (scrollingDevice.horizontalIncrement > 1)
+                    // See comment under vertical
+                    if (scrollingDevice.horizontalIncrement > 15)
                         rawDelta.setX(delta);
-                    else if (scrollingDevice.horizontalIncrement < -1)
+                    else if (scrollingDevice.horizontalIncrement < -15)
                         rawDelta.setX(-delta);
                 }
             }

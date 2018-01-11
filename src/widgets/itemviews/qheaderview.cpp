@@ -2086,40 +2086,26 @@ void QHeaderViewPrivate::_q_layoutChanged()
 {
     Q_Q(QHeaderView);
     viewport->update();
-    if (persistentHiddenSections.isEmpty() || modelIsEmpty()) {
-        if (modelSectionCount() != sectionCount())
-            q->initializeSections();
-        persistentHiddenSections.clear();
+
+    const auto hiddenSections = persistentHiddenSections;
+    persistentHiddenSections.clear();
+
+    clear();
+    q->initializeSections();
+    invalidateCachedSizeHint();
+
+    if (modelIsEmpty()) {
         return;
     }
 
-    QBitArray oldSectionHidden = sectionsHiddenToBitVector();
-    oldSectionHidden.resize(sectionItems.size());
-    bool sectionCountChanged = false;
-
-    for (int i = 0; i < persistentHiddenSections.count(); ++i) {
-        QModelIndex index = persistentHiddenSections.at(i);
+    for (const auto &index : hiddenSections) {
         if (index.isValid()) {
             const int logical = (orientation == Qt::Horizontal
                                  ? index.column()
                                  : index.row());
             q->setSectionHidden(logical, true);
-            oldSectionHidden.setBit(logical, false);
-        } else if (!sectionCountChanged && (modelSectionCount() != sectionCount())) {
-            sectionCountChanged = true;
-            break;
         }
     }
-    persistentHiddenSections.clear();
-
-    for (int i = 0; i < oldSectionHidden.count(); ++i) {
-        if (oldSectionHidden.testBit(i))
-            q->setSectionHidden(i, false);
-    }
-
-    // the number of sections changed; we need to reread the state of the model
-    if (sectionCountChanged)
-        q->initializeSections();
 }
 
 /*!
@@ -2333,18 +2319,20 @@ void QHeaderView::paintEvent(QPaintEvent *e)
     d->prepareSectionSelected(); // clear and resize the bit array
 
     QRect currentSectionRect;
-    int logical;
     const int width = d->viewport->width();
     const int height = d->viewport->height();
+    const int rtlHorizontalOffset = d->reverse() ? 1 : 0;
     for (int i = start; i <= end; ++i) {
         if (d->isVisualIndexHidden(i))
             continue;
         painter.save();
-        logical = logicalIndex(i);
+        const int logical = logicalIndex(i);
         if (d->orientation == Qt::Horizontal) {
-            currentSectionRect.setRect(sectionViewportPosition(logical), 0, sectionSize(logical), height);
+            currentSectionRect.setRect(sectionViewportPosition(logical) + rtlHorizontalOffset,
+                                       0, sectionSize(logical), height);
         } else {
-            currentSectionRect.setRect(0, sectionViewportPosition(logical), width, sectionSize(logical));
+            currentSectionRect.setRect(0, sectionViewportPosition(logical),
+                                       width, sectionSize(logical));
         }
         currentSectionRect.translate(offset);
 
@@ -2790,9 +2778,9 @@ void QHeaderView::paintSection(QPainter *painter, const QRect &rect, int logical
     if (first && last)
         opt.position = QStyleOptionHeader::OnlyOneSection;
     else if (first)
-        opt.position = QStyleOptionHeader::Beginning;
+        opt.position = d->reverse() ? QStyleOptionHeader::End : QStyleOptionHeader::Beginning;
     else if (last)
-        opt.position = QStyleOptionHeader::End;
+        opt.position = d->reverse() ? QStyleOptionHeader::Beginning : QStyleOptionHeader::End;
     else
         opt.position = QStyleOptionHeader::Middle;
     opt.orientation = d->orientation;
@@ -3171,6 +3159,15 @@ void QHeaderViewPrivate::setupSectionIndicator(int section, int position)
     QRect rect(0, 0, w, h);
 
     QPainter painter(&pm);
+    const QVariant variant = model->headerData(section, orientation,
+                                               Qt::FontRole);
+    if (variant.isValid() && variant.canConvert<QFont>()) {
+        const QFont sectionFont = qvariant_cast<QFont>(variant);
+        painter.setFont(sectionFont);
+    } else {
+        painter.setFont(q->font());
+    }
+
     painter.setOpacity(0.75);
     q->paintSection(&painter, rect, section);
     painter.end();
@@ -3364,7 +3361,7 @@ void QHeaderViewPrivate::resizeSections(QHeaderView::ResizeMode globalMode, bool
         // because it isn't stretch, determine its width and remove that from lengthToStretch
         int sectionSize = 0;
         if (resizeMode == QHeaderView::Interactive || resizeMode == QHeaderView::Fixed) {
-            sectionSize = headerSectionSize(i);
+            sectionSize = qBound(q->minimumSectionSize(), headerSectionSize(i), q->maximumSectionSize());
         } else { // resizeMode == QHeaderView::ResizeToContents
             int logicalIndex = q->logicalIndex(i);
             sectionSize = qMax(viewSectionSizeHint(logicalIndex),
@@ -3539,6 +3536,8 @@ void QHeaderViewPrivate::cascadingResize(int visual, int newSize)
 
         // cascade the section size change
         for (int i = visual + 1; i < sectionCount(); ++i) {
+            if (isVisualIndexHidden(i))
+                continue;
             if (!sectionIsCascadable(i))
                 continue;
             int currentSectionSize = headerSectionSize(i);
@@ -3581,6 +3580,8 @@ void QHeaderViewPrivate::cascadingResize(int visual, int newSize)
         // cascade the section size change
         if (delta < 0 && newSize < minimumSize) {
             for (int i = visual - 1; i >= 0; --i) {
+                if (isVisualIndexHidden(i))
+                    continue;
                 if (!sectionIsCascadable(i))
                     continue;
                 int sectionSize = headerSectionSize(i);
@@ -3595,6 +3596,8 @@ void QHeaderViewPrivate::cascadingResize(int visual, int newSize)
         // let the next section get the space from the resized section
         if (!sectionResized) {
             for (int i = visual + 1; i < sectionCount(); ++i) {
+                if (isVisualIndexHidden(i))
+                    continue;
                 if (!sectionIsCascadable(i))
                     continue;
                 int currentSectionSize = headerSectionSize(i);

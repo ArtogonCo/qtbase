@@ -47,6 +47,9 @@
 #include "qdatetime.h"
 #include "qoperatingsystemversion.h"
 #include "qoperatingsystemversion_p.h"
+#if defined(Q_OS_WIN) || defined(Q_OS_CYGWIN) || defined(Q_OS_WINRT)
+#include "qoperatingsystemversion_win_p.h"
+#endif
 #include <private/qlocale_tools_p.h>
 
 #include <qmutex.h>
@@ -4298,6 +4301,7 @@ bool QInternal::activateCallbacks(Callback cb, void **parameters)
 /*!
     \macro qDebug(const char *message, ...)
     \relates <QtGlobal>
+    \threadsafe
 
     Calls the message handler with the debug message \a message. If no
     message handler has been installed, the message is printed to
@@ -4334,6 +4338,7 @@ bool QInternal::activateCallbacks(Callback cb, void **parameters)
 /*!
     \macro qInfo(const char *message, ...)
     \relates <QtGlobal>
+    \threadsafe
     \since 5.5
 
     Calls the message handler with the informational message \a message. If no
@@ -4371,6 +4376,7 @@ bool QInternal::activateCallbacks(Callback cb, void **parameters)
 /*!
     \macro qWarning(const char *message, ...)
     \relates <QtGlobal>
+    \threadsafe
 
     Calls the message handler with the warning message \a message. If no
     message handler has been installed, the message is printed to
@@ -4405,6 +4411,7 @@ bool QInternal::activateCallbacks(Callback cb, void **parameters)
 /*!
     \macro qCritical(const char *message, ...)
     \relates <QtGlobal>
+    \threadsafe
 
     Calls the message handler with the critical message \a message. If no
     message handler has been installed, the message is printed to

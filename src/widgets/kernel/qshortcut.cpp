@@ -45,7 +45,9 @@
 #if QT_CONFIG(whatsthis)
 #include <qwhatsthis.h>
 #endif
+#if QT_CONFIG(menu)
 #include <qmenu.h>
+#endif
 #if QT_CONFIG(menubar)
 #include <qmenubar.h>
 #endif
@@ -203,7 +205,7 @@ static bool correctWidgetContext(Qt::ShortcutContext context, QWidget *w, QWidge
 #if defined(DEBUG_QSHORTCUTMAP)
     qDebug().nospace() << "..true [Pass-through]";
 #endif
-    return true;
+    return QApplicationPrivate::tryModalHelper(w, nullptr);
 }
 
 #if QT_CONFIG(graphicsview)
@@ -276,7 +278,7 @@ static bool correctActionContext(Qt::ShortcutContext context, QAction *a, QWidge
 #endif
     for (int i = 0; i < widgets.size(); ++i) {
         QWidget *w = widgets.at(i);
-#ifndef QT_NO_MENU
+#if QT_CONFIG(menu)
         if (QMenu *menu = qobject_cast<QMenu *>(w)) {
 #ifdef Q_OS_DARWIN
             // On Mac, menu item shortcuts are processed before reaching any window.
@@ -287,8 +289,10 @@ static bool correctActionContext(Qt::ShortcutContext context, QAction *a, QWidge
             // not the QMenu.) Since we can also reach this code by climbing the menu
             // hierarchy (see below), or when the shortcut is not a key-equivalent, we
             // need to check whether the QPA menu is actually disabled.
+            // When there is no QPA menu, there will be no QCocoaMenuDelegate checking
+            // for the actual shortcuts. We can then fallback to our own logic.
             QPlatformMenu *pm = menu->platformMenu();
-            if (!pm || !pm->isEnabled())
+            if (pm && !pm->isEnabled())
                 continue;
 #endif
             QAction *a = menu->menuAction();

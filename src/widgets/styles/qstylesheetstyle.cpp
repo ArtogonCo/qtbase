@@ -45,7 +45,9 @@
 #include "private/qcssutil_p.h"
 #include <qdebug.h>
 #include <qapplication.h>
+#if QT_CONFIG(menu)
 #include <qmenu.h>
+#endif
 #if QT_CONFIG(menubar)
 #include <qmenubar.h>
 #endif
@@ -1665,7 +1667,7 @@ int QStyleSheetStyle::nativeFrameWidth(const QWidget *w)
         return base->pixelMetric(QStyle::PM_ComboBoxFrameWidth, 0, w);
 #endif
 
-#ifndef QT_NO_MENU
+#if QT_CONFIG(menu)
     if (qobject_cast<const QMenu *>(w))
         return base->pixelMetric(QStyle::PM_MenuPanelWidth, 0, w);
 #endif
@@ -3653,7 +3655,7 @@ void QStyleSheetStyle::drawControl(ControlElement ce, const QStyleOption *opt, Q
             if ((pseudo == PseudoElement_MenuSeparator) && subRule.hasDrawable()) {
                 subRule.drawRule(p, opt->rect);
             } else if ((pseudo == PseudoElement_Item)
-                        && (allRules.hasBox() || allRules.hasBorder()
+                        && (allRules.hasBox() || allRules.hasBorder() || subRule.hasFont
                             || (allRules.background() && !allRules.background()->pixmap.isNull()))) {
                 subRule.drawRule(p, opt->rect);
                 if (subRule.hasBackground()) {

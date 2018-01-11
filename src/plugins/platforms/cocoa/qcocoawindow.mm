@@ -1887,6 +1887,21 @@ QCocoaNSWindow *QCocoaWindow::createNSWindow(bool shouldBeChildNSWindow, bool sh
 
     applyContentBorderThickness(window);
 
+    // Prevent CoreGraphics RGB32 -> RGB64 backing store conversions on deep color
+    // displays by forcing 8-bit components, unless a deep color format has been
+    // requested. This conversion uses significant CPU time.
+    QSurface::SurfaceType surfaceType = QPlatformWindow::window()->surfaceType();
+    bool usesCoreGraphics = surfaceType == QSurface::RasterSurface || surfaceType == QSurface::RasterGLSurface;
+    QSurfaceFormat surfaceFormat = QPlatformWindow::window()->format();
+    bool usesDeepColor = surfaceFormat.redBufferSize() > 8 ||
+                         surfaceFormat.greenBufferSize() > 8 ||
+                         surfaceFormat.blueBufferSize() > 8;
+    bool usesLayer = view().layer;
+    if (usesCoreGraphics && !usesDeepColor && !usesLayer) {
+        [window setDynamicDepthLimit:NO];
+        [window setDepthLimit:NSWindowDepthTwentyfourBitRGB];
+    }
+
     return window;
 }
 
@@ -2161,6 +2176,7 @@ void QCocoaWindow::applyContentBorderThickness(NSWindow *window)
     if (!m_drawContentBorderGradient) {
         [window setStyleMask:[window styleMask] & ~NSTexturedBackgroundWindowMask];
         [[[window contentView] superview] setNeedsDisplay:YES];
+        window.titlebarAppearsTransparent = NO;
         return;
     }
 
@@ -2185,6 +2201,7 @@ void QCocoaWindow::applyContentBorderThickness(NSWindow *window)
     int effectiveBottomContentBorderThickness = m_bottomContentBorderThickness;
 
     [window setStyleMask:[window styleMask] | NSTexturedBackgroundWindowMask];
+    window.titlebarAppearsTransparent = YES;
 
     [window setContentBorderThickness:effectiveTopContentBorderThickness forEdge:NSMaxYEdge];
     [window setAutorecalculatesContentBorderThickness:NO forEdge:NSMaxYEdge];
