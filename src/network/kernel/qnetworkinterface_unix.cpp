@@ -44,6 +44,13 @@
 #include "qalgorithms.h"
 #include "private/qnet_unix_p.h"
 
+
+// Ivan: lack of if_nameindex
+#ifdef ANDROID
+#define QT_NO_IPV6IFNAME
+#endif
+
+
 #ifndef QT_NO_NETWORKINTERFACE
 
 #define IP_MULTICAST    // make AIX happy and define IFF_MULTICAST
