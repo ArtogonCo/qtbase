@@ -162,6 +162,7 @@ private slots:
     void renderToPixmap();
     void styleOptionViewItem();
     void keyboardNavigationWithDisabled();
+    void saveRestoreState();
 
     // task-specific tests:
     void task174627_moveLeftToRoot();
@@ -311,17 +312,6 @@ public:
         beginRemoveColumns(QModelIndex(), cols - 1, cols - 1);
         --cols;
         endRemoveColumns();
-    }
-
-    void removeAddLastColumnLayoutChanged()    // for taskQTBUG_41124
-    {
-        // make sure QHeaderView::_q_layoutChanged() is called
-        emit layoutAboutToBeChanged();
-        --cols;
-        emit layoutChanged();
-        emit layoutAboutToBeChanged();
-        ++cols;
-        emit layoutChanged();
     }
 
     void removeAllColumns()
@@ -1317,19 +1307,6 @@ void tst_QTreeView::columnHidden()
     for (int c = 0; c < model.columnCount(); ++c)
         QCOMPARE(view.isColumnHidden(c), true);
     view.update();
-
-    // QTBUG_41124:
-    // QHeaderViewPrivate::_q_layoutChanged was not called because it was
-    // disconnected in QTreeView::setModel(). _q_layoutChanged restores
-    // the hidden sections which is tested here
-    view.setColumnHidden(model.cols - 1, true);
-    model.removeAddLastColumnLayoutChanged();
-    // we removed the last column and added a new one
-    // (with layoutToBeChanged/layoutChanged() for both) so column
-    // 1 is a new column and therefore must not be hidden when
-    // _q_layoutChanged() is called and is doing the right stuff
-    QCOMPARE(view.isColumnHidden(model.cols - 1), false);
-
 }
 
 void tst_QTreeView::rowHidden()
@@ -4060,6 +4037,58 @@ void tst_QTreeView::keyboardNavigationWithDisabled()
     QCOMPARE(view.currentIndex(), model.index(12, 0));
     QTest::keyClick(view.viewport(), Qt::Key_Up);
     QCOMPARE(view.currentIndex(), model.index(6, 0));
+}
+
+class RemoveColumnOne : public QSortFilterProxyModel
+{
+public:
+    bool filterAcceptsColumn(int source_column, const QModelIndex &) const override
+    {
+        if (m_removeColumn)
+            return source_column != 1;
+        return true;
+    }
+    void removeColumn()
+    {
+        m_removeColumn = true;
+        invalidate();
+    }
+private:
+    bool m_removeColumn = false;
+};
+
+
+void tst_QTreeView::saveRestoreState()
+{
+    QStandardItemModel model;
+    for (int i = 0; i < 100; i++) {
+        QList<QStandardItem *> items;
+        items << new QStandardItem(QLatin1String("item ") + QString::number(i)) << new QStandardItem(QStringLiteral("hidden by proxy")) << new QStandardItem(QStringLiteral("hidden by user"));
+        model.appendRow(items);
+    }
+    QCOMPARE(model.columnCount(), 3);
+
+    RemoveColumnOne proxy;
+    proxy.setSourceModel(&model);
+    QCOMPARE(proxy.columnCount(), 3);
+
+    QTreeView view;
+    view.setModel(&proxy);
+    view.resize(500, 500);
+    view.show();
+    view.header()->hideSection(1); // ## this is wrong, it's 2 in qtbase-5.11
+    QVERIFY(view.header()->isSectionHidden(1)); // ## this is wrong, it's 2 in qtbase-5.11
+    proxy.removeColumn();
+    QCOMPARE(proxy.columnCount(), 2);
+    QVERIFY(view.header()->isSectionHidden(1));
+    const QByteArray data = view.header()->saveState();
+
+    QTreeView view2;
+    view2.setModel(&proxy);
+    view2.resize(500, 500);
+    view2.show();
+    view2.header()->restoreState(data);
+    QVERIFY(view2.header()->isSectionHidden(1));
 }
 
 class Model_11466 : public QAbstractItemModel
